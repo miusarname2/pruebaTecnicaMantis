@@ -119,9 +119,9 @@ node kit/tools/make-cloud.js 1201-30001 2000000 --truncate
 
 En cumplimiento con las reglas de la prueba técnica (*"Puedes usar asistentes de código. Di en el README cuáles usaste y para qué"*):
 
-- **Herramienta utilizada:** Antigravity (Google DeepMind Agentic AI Assistant).
+- **Herramienta utilizada:** Claude Code
 - **Usos específicos:**
   1. Aceleración en la escritura de las pruebas automatizadas con Jest y Supertest en el backend.
   2. Asistencia en la conversión de sistemas de coordenadas ($Z$-up metros a $Y$-up en Three.js).
   3. Implementación y optimización del Web Worker con buffers transferibles (`Transferable`) para parseo y partición por nivel de PTS1.
-  4. Depuración de condiciones de carrera (`AbortController`), accesibilidad táctil (`44 px`) y scripts monorepo en la raíz.
+  4. Depuración de condiciones de carrera (`AbortController`) y accesibilidad táctil (`44 px`)
