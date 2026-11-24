@@ -1,0 +1,10 @@
+node_modules/
+.env
+dist/
+dist-ssr/
+*.local
+*.log
+npm-debug.log*
+
+# Generated binary clouds
+kit/data/clouds/*.pts

@@ -14,67 +14,65 @@ Abre una terminal en la raíz del proyecto `pruebaTecnicaMantis`:
 cd pruebaTecnicaMantis
 ```
 
-### 2. Generar Nubes de Puntos de Prueba (Opcional)
-Si deseas generar o regenerar los archivos binarios de nubes de puntos LiDAR (`.pts1`):
-```bash
-node kit/tools/make-cloud.js --project proj-tower --points 2000000
-node kit/tools/make-cloud.js --project proj-warehouse --points 1500000
-```
-*(Nota: Para probar manejo de errores de archivos truncados puedes usar `--truncate`).*
+### 2. Instalar y Poner en Marcha con un Solo Comando 🚀
 
----
-
-### 3. Poner en Marcha el Backend (API)
-
-Abre una terminal y ejecuta:
+Instala todas las dependencias del proyecto (raíz, backend y frontend) y arranca ambos servicios de forma concurrente:
 
 ```bash
-cd Backend
+# 1. Instalar dependencias completas (raíz, backend y frontend automáticamente):
 npm install
+
+# 2. Generar nubes de puntos de prueba mínimas (si no están generadas aún):
+npm run setup:clouds
+
+# 3. Arrancar Backend (puerto 3000) y Frontend (puerto 5173) en una sola terminal:
 npm run dev
 ```
 
-- **URL de la API:** `http://localhost:3001`
-- **Para ejecutar la suite de 44 pruebas automatizadas:**
-  ```bash
-  npm test
-  ```
+- **Frontend (Visor Web 3D):** [http://localhost:5173](http://localhost:5173)
+- **Backend API:** [http://localhost:3000](http://localhost:3000)
+
+*(Nota: También puedes arrancarlo con `npm start` para el modo producción de la API).*
 
 ---
 
-### 4. Poner en Marcha el Frontend (Visor Web 3D)
+### 3. Pruebas Automatizadas desde la Raíz
 
-Abre una segunda terminal y ejecuta:
+Para ejecutar la suite completa de 44 pruebas unitarias y de integración de la API:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+npm test
 ```
 
-- **URL de la Aplicación:** `http://localhost:5173`
-- **Para compilar para producción:**
-  ```bash
-  npm run build
-  ```
-- **Para previsualizar el build de producción:**
-  ```bash
-  npm run preview
-  ```
+---
+
+### 4. Generación Manual de Nubes de Puntos LiDAR (Opcional)
+
+Si deseas regenerar manualmente las nubes en formato binario PTS1 con el generador del kit:
+```bash
+# Proyecto 1201-30001 (410 Harbor Ave) con 2M de puntos:
+node kit/tools/make-cloud.js 1201-30001 2000000
+
+# Proyecto 1201-30002 (77 Mill St Warehouse) con 1.5M de puntos:
+node kit/tools/make-cloud.js 1201-30002 1500000
+
+# Probar archivos truncados para validar errores honestos en el visor:
+node kit/tools/make-cloud.js 1201-30001 2000000 --truncate
+```
 
 ---
 
 ## Cómo Probar la Aplicación
 
-1. **Accede a `http://localhost:5173`** en tu navegador o iPad.
+1. **Accede a [http://localhost:5173](http://localhost:5173)** en tu navegador de escritorio o iPad.
 2. **Selecciona un Usuario:**
-   - **Dana Ortiz (Staff):** Tiene visibilidad global de todos los proyectos (`proj-tower`, `proj-warehouse`, `proj-retail`) y ve teléfonos y correos en la ficha de contactos.
-   - **Sam Lee (Client - Acme Corp):** Solo puede ver los proyectos de su cuenta (`proj-tower` y `proj-warehouse`). Sus contactos no muestran teléfonos ni correos privados.
-   - **Rita Gomez (Client - Brick & Mortar):** Solo ve el proyecto `proj-retail`.
+   - **Dana Ortiz (Staff):** Tiene visibilidad global de todos los proyectos (`1201-30001 - 410 Harbor Ave`, `1201-30002 - 77 Mill St Warehouse`, `0980-41007 - Brickyard Lofts`) y ve teléfonos y correos en la ficha de contactos.
+   - **Sam Lee (Client - Acme Builders):** Solo puede ver los proyectos de su cuenta (`1201-30001` y `1201-30002`). Sus contactos no muestran teléfonos ni correos privados (regla anti-fuga de datos).
+   - **Rita Gomez (Client - Brick & Co):** Solo ve el proyecto `0980-41007`.
 3. **Explora en 3D:**
    - **Navegación:** Rota con clic izquierdo / un dedo; panea con clic derecho / dos dedos; haz zoom con rueda / gesto de pellizco.
    - **Inspección de Cuartos:** Toca o haz clic sobre cualquier habitación para abrir el panel lateral, alternar entre $\text{m}^2$ y $\text{ft}^2$, o reportar una incidencia.
-   - **Filtro de Nivel:** Selecciona "Todos", "Nivel 1" o "Nivel 2" para aislar geometrías y nubes de puntos de cada planta.
+   - **Filtro de Nivel:** Selecciona "All", "Level 1" o "Level 2" para aislar geometrías y nubes de puntos de cada planta.
    - **Cargar Nube LiDAR:** Haz clic en "Load point cloud" para ver la barra de progreso en MB y %, o cancela la descarga en cualquier momento.
    - **Alternar Tema:** Cambia entre modo Claro (papel milimetrado CAD) y modo Oscuro (carbón técnico) sin perder la escena 3D ni los objetos cargados.
 
