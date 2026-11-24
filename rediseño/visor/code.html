@@ -1,0 +1,568 @@
+<!DOCTYPE html><html lang="en"><head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Site Viewer — 3D Digital Twin</title>
+  <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+  <script id="tailwind-config">/** @type {import('tailwindcss').Config} */
+globalThis.tailwind = globalThis.tailwind || {};
+globalThis.tailwind.config = {
+  darkMode: 'class',
+  theme: {
+    extend: {
+      colors: {
+        'success': '#2E6F40',
+        'on-success': '#FFFFFF',
+        'success-container': '#D3F0D9',
+        'on-success-container': '#143D20',
+        'grid-line-light': '#E2DDD4',
+        'grid-line-dark': '#2A2823',
+        'light-primary': '#AB2E07',
+        'light-on-primary': '#FFFFFF',
+        'light-primary-container': '#CE4621',
+        'light-on-primary-container': '#FFFBFF',
+        'light-secondary': '#33628B',
+        'light-on-secondary': '#FFFFFF',
+        'light-secondary-container': '#E8F1FF',
+        'light-on-secondary-container': '#154A72',
+        'light-tertiary': '#006191',
+        'light-on-tertiary': '#FFFFFF',
+        'light-error': '#BA1A1A',
+        'light-on-error': '#FFFFFF',
+        'light-error-container': '#FFDAD6',
+        'light-on-error-container': '#93000A',
+        'light-background': '#FEF9F0',
+        'light-on-background': '#1D1C16',
+        'light-surface': '#FEF9F0',
+        'light-surface-dim': '#DED9D1',
+        'light-surface-bright': '#FFFFFF',
+        'light-surface-container-lowest': '#FFFFFF',
+        'light-surface-container-low': '#F8F3EA',
+        'light-surface-container': '#F2EDE5',
+        'light-surface-container-high': '#EDE8DF',
+        'light-surface-container-highest': '#E7E2D9',
+        'light-on-surface': '#1D1C16',
+        'light-surface-variant': '#EDE8DF',
+        'light-on-surface-variant': '#615E58',
+        'light-outline': '#7A7770',
+        'light-outline-variant': '#CAC6BE',
+        'light-inverse-surface': '#32302B',
+        'light-inverse-on-surface': '#F5F0E7',
+        'dark-primary': '#F4613A',
+        'dark-on-primary': '#2A0400',
+        'dark-primary-container': '#AF300A',
+        'dark-on-primary-container': '#FFEDE9',
+        'dark-secondary': '#82AFDD',
+        'dark-on-secondary': '#001D33',
+        'dark-secondary-container': '#154A72',
+        'dark-on-secondary-container': '#CFE5FF',
+        'dark-tertiary': '#8FCDFF',
+        'dark-on-tertiary': '#00344F',
+        'dark-error': '#FFB4AB',
+        'dark-on-error': '#690005',
+        'dark-error-container': '#93000A',
+        'dark-on-error-container': '#FFDAD6',
+        'dark-background': '#15130F',
+        'dark-on-background': '#E7E2D9',
+        'dark-surface': '#15130F',
+        'dark-surface-dim': '#0F0E0A',
+        'dark-surface-bright': '#2C2A24',
+        'dark-surface-container-lowest': '#0F0E0A',
+        'dark-surface-container-low': '#1D1C16',
+        'dark-surface-container': '#21201A',
+        'dark-surface-container-high': '#2C2A24',
+        'dark-surface-container-highest': '#36352F',
+        'dark-on-surface': '#E7E2D9',
+        'dark-surface-variant': '#2C2A24',
+        'dark-on-surface-variant': '#AFABA3',
+        'dark-outline': '#949089',
+        'dark-outline-variant': '#494740',
+        'dark-inverse-surface': '#E7E2D9',
+        'dark-inverse-on-surface': '#32302B',
+      },
+      borderRadius: {
+        'sm': '2px',
+        'DEFAULT': '4px',
+        'md': '6px',
+        'lg': '8px',
+        'full': '9999px',
+      },
+      spacing: {
+        'gutter-xs': '4px',
+        'gutter-sm': '8px',
+        'gutter-md': '12px',
+        'gutter-lg': '16px',
+        'gutter-xl': '24px',
+        'section': '32px',
+        'page-margin': '24px',
+      },
+      fontFamily: {
+        'display': ['"Archivo"', 'sans-serif'],
+        'headline': ['"Archivo"', 'sans-serif'],
+        'title': ['"Archivo"', 'sans-serif'],
+        'body': ['"Reddit Sans"', 'sans-serif'],
+        'label': ['"Reddit Sans"', 'sans-serif'],
+        'mono': ['"Source Code Pro"', 'monospace'],
+      },
+      fontSize: {
+        'display-md': ['36px', { lineHeight: '44px', letterSpacing: '-0.75px', fontWeight: '600' }],
+        'display-md-mobile': ['28px', { lineHeight: '36px', letterSpacing: '-0.5px', fontWeight: '600' }],
+        'headline-lg': ['24px', { lineHeight: '30px', letterSpacing: '-0.3px', fontWeight: '600' }],
+        'headline-md': ['18px', { lineHeight: '24px', letterSpacing: '-0.2px', fontWeight: '600' }],
+        'title-md': ['15px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '600' }],
+        'body-md': ['14px', { lineHeight: '20px', letterSpacing: '0px', fontWeight: '400' }],
+        'body-sm': ['12px', { lineHeight: '16px', letterSpacing: '0px', fontWeight: '400' }],
+        'label-lg': ['13px', { lineHeight: '18px', letterSpacing: '0px', fontWeight: '600' }],
+        'label-sm': ['11px', { lineHeight: '14px', letterSpacing: '0.4px', fontWeight: '600' }],
+        'mono-sm': ['12px', { lineHeight: '16px', letterSpacing: '0px', fontWeight: '500' }],
+      },
+      transitionDuration: {
+        'state-change': '120ms',
+        'panel-transition': '180ms',
+      },
+      transitionDelay: {
+        'state-change': '0ms',
+        'panel-transition': '0ms',
+      },
+      transitionTimingFunction: {
+        'state-change': 'ease-out',
+        'panel-transition': 'cubic-bezier(0.2, 0, 0, 1)',
+      },
+    },
+  },
+};
+if (typeof module !== 'undefined') module.exports = globalThis.tailwind.config;
+</script>
+  <link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;600;700&amp;family=Reddit+Sans:wght@400;500;600&amp;family=Source+Code+Pro:wght@400;500&amp;display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=block" rel="stylesheet">
+  <style>
+    .material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons {
+      display: inline-block; width: 1em; height: 1em; line-height: 1 !important;
+      box-sizing: content-box; overflow: hidden; white-space: nowrap; direction: ltr; vertical-align: middle;
+    }
+    .cad-grid {
+      background-size: 28px 28px;
+      background-image:
+        linear-gradient(to right, rgba(122, 119, 112, 0.12) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(122, 119, 112, 0.12) 1px, transparent 1px);
+    }
+    .dark .cad-grid {
+      background-image:
+        linear-gradient(to right, rgba(148, 144, 137, 0.10) 1px, transparent 1px),
+        linear-gradient(to bottom, rgba(148, 144, 137, 0.10) 1px, transparent 1px);
+    }
+    .volume-group { cursor: pointer; transition: opacity 120ms ease-out; }
+    .volume-group:hover { opacity: 0.92; }
+  </style>
+</head>
+<body class="bg-light-surface dark:bg-dark-surface text-light-on-surface dark:text-dark-on-surface font-body antialiased transition-colors duration-state-change ease-state-change">
+  <div class="min-h-[1024px] flex flex-col" data-stitch-vh="min-h-[1024px]===min-h-screen">
+    <!-- Top Utility Header -->
+    <header class="bg-light-surface-container-lowest dark:bg-dark-surface-container-low border-b border-light-outline-variant dark:border-dark-outline-variant px-gutter-lg py-gutter-sm flex flex-wrap items-center justify-between gap-gutter-md z-20">
+      <!-- Left: Brand + Project Switcher -->
+      <div class="flex items-center gap-gutter-lg">
+        <div class="flex items-center gap-gutter-sm">
+          <div class="w-8 h-8 rounded bg-light-primary dark:bg-dark-primary text-light-on-primary dark:text-dark-on-primary flex items-center justify-center">
+            <span class="material-symbols-outlined" aria-hidden="true">deployed_code</span>
+          </div>
+          <div class="flex flex-col">
+            <span class="font-headline text-title-md text-light-on-surface dark:text-dark-on-surface" data-design-text-token="title-md">Site Viewer</span>
+            <span class="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant uppercase tracking-wider" data-design-text-token="mono-sm">3D Digital Twin</span>
+          </div>
+        </div>
+
+        <div class="hidden sm:block h-6 w-px bg-light-outline-variant dark:bg-dark-outline-variant"></div>
+
+        <!-- Project Selector -->
+        <label class="flex items-center gap-gutter-sm">
+          <span class="font-label text-label-sm text-light-on-surface-variant dark:text-dark-on-surface-variant uppercase hidden md:inline" data-design-text-token="label-sm">Project</span>
+          <select aria-label="Select project" class="rounded bg-light-surface-container-low dark:bg-dark-surface-container text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant font-body text-body-sm py-gutter-xs pl-gutter-md pr-8 focus:outline-none focus:border-light-primary dark:focus:border-dark-primary focus:ring-2 focus:ring-light-primary dark:focus:ring-dark-primary">
+            <option>77 Mill St Warehouse (1201-30002)</option>
+            <option>410 Harbor Logistics (1201-30019)</option>
+            <option>18 Oak Annex (1201-30024)</option>
+          </select>
+        </label>
+      </div>
+
+      <!-- Right: Theme Toggle + User Role + Sign Out -->
+      <div class="flex items-center gap-gutter-sm">
+        <!-- Light / Dark Mode Switch -->
+        <div class="inline-flex items-center rounded bg-light-surface-container-low dark:bg-dark-surface-container p-0.5 border border-light-outline-variant dark:border-dark-outline-variant" role="group" aria-label="Theme mode">
+          <button id="btn-light-mode" type="button" class="inline-flex items-center gap-gutter-xs px-gutter-sm py-gutter-xs rounded-sm bg-light-surface-container-lowest dark:bg-transparent text-light-on-surface dark:text-dark-on-surface-variant font-label text-label-sm transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined" aria-hidden="true">light_mode</span>
+            <span data-design-text-token="label-sm">Light</span>
+          </button>
+          <button id="btn-dark-mode" type="button" class="inline-flex items-center gap-gutter-xs px-gutter-sm py-gutter-xs rounded-sm bg-transparent dark:bg-dark-surface-container-high text-light-on-surface-variant dark:text-dark-on-surface font-label text-label-sm transition-colors duration-state-change ease-state-change">
+            <span class="material-symbols-outlined" aria-hidden="true">dark_mode</span>
+            <span data-design-text-token="label-sm">Dark</span>
+          </button>
+        </div>
+
+        <!-- User / Role -->
+        <div class="hidden md:flex items-center gap-gutter-sm px-gutter-md py-gutter-xs rounded bg-light-surface-container-low dark:bg-dark-surface-container border border-light-outline-variant dark:border-dark-outline-variant">
+          <span class="w-6 h-6 rounded-sm bg-light-secondary dark:bg-dark-secondary text-light-on-secondary dark:text-dark-on-secondary font-mono text-mono-sm flex items-center justify-center">DO</span>
+          <span class="font-body text-body-sm text-light-on-surface dark:text-dark-on-surface" data-design-text-token="body-sm">Dana Ortiz</span>
+          <span class="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant" data-design-text-token="mono-sm">STAFF</span>
+        </div>
+
+        <a href="../login/Login.html" aria-label="Sign out" title="Sign out" class="inline-flex items-center justify-center w-8 h-8 rounded bg-light-surface-container-lowest dark:bg-dark-surface-container text-light-on-surface-variant dark:text-dark-on-surface-variant border border-light-outline-variant dark:border-dark-outline-variant hover:text-light-on-surface dark:hover:text-dark-on-surface hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high transition-colors duration-state-change ease-state-change">
+          <span class="material-symbols-outlined" aria-hidden="true">logout</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Main Workspace: 3D Viewport + Right Inspector -->
+    <div class="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_24rem]">
+      <!-- 3D CAD Viewport -->
+      <main class="relative bg-light-surface dark:bg-dark-surface cad-grid flex flex-col justify-between p-gutter-lg min-h-96 overflow-hidden">
+        <!-- Top Viewport Controls -->
+        <div class="flex flex-wrap items-center justify-between gap-gutter-md z-10">
+          <!-- Level Filter Bar -->
+          <div class="inline-flex items-center gap-gutter-xs p-gutter-xs rounded-md bg-light-surface-container-lowest dark:bg-dark-surface-container-low border border-light-outline-variant dark:border-dark-outline-variant">
+            <span class="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant px-gutter-sm uppercase" data-design-text-token="mono-sm">Level</span>
+            <button type="button" data-level-filter="all" class="level-btn px-gutter-md py-gutter-xs rounded-sm font-label text-label-sm bg-light-secondary dark:bg-dark-secondary text-light-on-secondary dark:text-dark-on-secondary transition-colors duration-state-change ease-state-change">
+              <span data-design-text-token="label-sm">All Levels</span>
+            </button>
+            <button type="button" data-level-filter="ground" class="level-btn px-gutter-md py-gutter-xs rounded-sm font-label text-label-sm text-light-on-surface dark:text-dark-on-surface hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high transition-colors duration-state-change ease-state-change">
+              <span data-design-text-token="label-sm">Ground (3)</span>
+            </button>
+            <button type="button" data-level-filter="roof" class="level-btn px-gutter-md py-gutter-xs rounded-sm font-label text-label-sm text-light-on-surface dark:text-dark-on-surface hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high transition-colors duration-state-change ease-state-change">
+              <span data-design-text-token="label-sm">Roof (1)</span>
+            </button>
+          </div>
+
+          <!-- Render Mode Controls -->
+          <div class="inline-flex items-center gap-gutter-xs p-gutter-xs rounded-md bg-light-surface-container-lowest dark:bg-dark-surface-container-low border border-light-outline-variant dark:border-dark-outline-variant">
+            <button type="button" data-view-mode="shaded" class="view-mode-btn inline-flex items-center gap-gutter-xs px-gutter-sm py-gutter-xs rounded-sm font-label text-label-sm bg-light-surface-container-high dark:bg-dark-surface-container-high text-light-on-surface dark:text-dark-on-surface transition-colors duration-state-change ease-state-change">
+              <span class="material-symbols-outlined" aria-hidden="true">view_in_ar</span>
+              <span data-design-text-token="label-sm">Massing</span>
+            </button>
+            <button type="button" data-view-mode="wireframe" class="view-mode-btn inline-flex items-center gap-gutter-xs px-gutter-sm py-gutter-xs rounded-sm font-label text-label-sm text-light-on-surface-variant dark:text-dark-on-surface-variant hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high transition-colors duration-state-change ease-state-change">
+              <span class="material-symbols-outlined" aria-hidden="true">grid_4x4</span>
+              <span data-design-text-token="label-sm">Wireframe</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Interactive 3D Isometric Architectural Model -->
+        <div class="flex-1 flex items-center justify-center my-gutter-lg">
+          <svg id="building-svg" viewBox="0 0 760 480" class="w-full max-w-3xl select-none" aria-label="Interactive 3D digital twin of 77 Mill St Warehouse">
+            <!-- Ground Plane Grid Extension -->
+            <g class="stroke-light-outline-variant dark:stroke-dark-outline-variant" stroke-width="0.75" opacity="0.6">
+              <line x1="70" y1="320" x2="380" y2="140"></line>
+              <line x1="160" y1="372" x2="470" y2="192"></line>
+              <line x1="250" y1="424" x2="560" y2="244"></line>
+              <line x1="340" y1="476" x2="650" y2="296"></line>
+              <line x1="120" y1="290" x2="430" y2="470"></line>
+              <line x1="210" y1="238" x2="520" y2="418"></line>
+              <line x1="300" y1="186" x2="610" y2="366"></line>
+              <line x1="390" y1="134" x2="700" y2="314"></line>
+            </g>
+
+            <!-- Volume A: Loading Bay West (Ground) -->
+            <g class="volume-group" data-volume-id="loading-bay" data-level="ground" tabindex="0" role="button" aria-label="Inspect Loading Bay West">
+              <polygon points="120,255 270,342 270,405 120,318" class="vol-face-left fill-light-surface-container-high dark:fill-dark-surface-container stroke-light-on-surface dark:stroke-dark-outline" stroke-width="1.5" stroke-linejoin="round"></polygon>
+              <polygon points="270,342 395,270 395,333 270,405" class="vol-face-right fill-light-surface-container-lowest dark:fill-dark-surface-container-low stroke-light-on-surface dark:stroke-dark-outline" stroke-width="1.5" stroke-linejoin="round"></polygon>
+              <polygon points="120,255 245,183 395,270 270,342" class="vol-face-top fill-light-surface-container-low dark:fill-dark-surface-container-high stroke-light-on-surface dark:stroke-dark-outline" stroke-width="1.5" stroke-linejoin="round"></polygon>
+              <!-- Bay Doors Detail -->
+              <polygon points="150,295 182,314 182,354 150,335" class="fill-light-outline-variant/40 dark:fill-dark-outline-variant/40 stroke-light-outline dark:stroke-dark-outline" stroke-width="1"></polygon>
+              <polygon points="200,324 232,343 232,383 200,364" class="fill-light-outline-variant/40 dark:fill-dark-outline-variant/40 stroke-light-outline dark:stroke-dark-outline" stroke-width="1"></polygon>
+            </g>
+
+            <!-- Volume B: Main Warehouse Hall (Ground) -->
+            <g class="volume-group" data-volume-id="main-hall" data-level="ground" tabindex="0" role="button" aria-label="Inspect Main Warehouse Hall">
+              <polygon points="215,165 420,283 420,375 215,257" class="vol-face-left fill-light-surface-container-high dark:fill-dark-surface-container stroke-light-on-surface dark:stroke-dark-outline" stroke-width="1.5" stroke-linejoin="round"></polygon>
+              <polygon points="420,283 625,165 625,257 420,375" class="vol-face-right fill-light-surface-container-lowest dark:fill-dark-surface-container-low stroke-light-on-surface dark:stroke-dark-outline" stroke-width="1.5" stroke-linejoin="round"></polygon>
+              <polygon points="215,165 420,47 625,165 420,283" class="vol-face-top fill-light-surface-container-low dark:fill-dark-surface-container-high stroke-light-on-surface dark:stroke-dark-outline" stroke-width="1.5" stroke-linejoin="round"></polygon>
+              <!-- Structural Truss Lines -->
+              <g class="stroke-light-outline-variant dark:stroke-dark-outline-variant pointer-events-none" stroke-width="0.9">
+                <line x1="266" y1="135" x2="471" y2="253"></line>
+                <line x1="317" y1="106" x2="522" y2="224"></line>
+                <line x1="368" y1="76" x2="573" y2="194"></line>
+              </g>
+            </g>
+
+            <!-- Volume C: East Operations Annex (Ground) -->
+            <g class="volume-group" data-volume-id="east-annex" data-level="ground" tabindex="0" role="button" aria-label="Inspect East Operations Annex">
+              <polygon points="520,226 575,258 575,306 520,274" class="vol-face-left fill-light-surface-container-high dark:fill-dark-surface-container stroke-light-on-surface dark:stroke-dark-outline" stroke-width="1.5" stroke-linejoin="round"></polygon>
+              <polygon points="575,258 655,212 655,260 575,306" class="vol-face-right fill-light-surface-container-lowest dark:fill-dark-surface-container-low stroke-light-on-surface dark:stroke-dark-outline" stroke-width="1.5" stroke-linejoin="round"></polygon>
+              <polygon points="520,226 600,180 655,212 575,258" class="vol-face-top fill-light-surface-container-low dark:fill-dark-surface-container-high stroke-light-on-surface dark:stroke-dark-outline" stroke-width="1.5" stroke-linejoin="round"></polygon>
+            </g>
+
+            <!-- Volume D: Roof Mechanical Penthouse (Roof) -->
+            <g class="volume-group" data-volume-id="roof-penthouse" data-level="roof" tabindex="0" role="button" aria-label="Inspect Roof Mechanical Penthouse">
+              <polygon points="355,148 415,183 415,210 355,175" class="vol-face-left fill-light-surface-container-high dark:fill-dark-surface-container stroke-light-on-surface dark:stroke-dark-outline" stroke-width="1.5" stroke-linejoin="round"></polygon>
+              <polygon points="415,183 475,148 475,175 415,210" class="vol-face-right fill-light-surface-container-lowest dark:fill-dark-surface-container-low stroke-light-on-surface dark:stroke-dark-outline" stroke-width="1.5" stroke-linejoin="round"></polygon>
+              <polygon points="355,148 415,113 475,148 415,183" class="vol-face-top fill-light-surface-container-low dark:fill-dark-surface-container-high stroke-light-on-surface dark:stroke-dark-outline" stroke-width="1.5" stroke-linejoin="round"></polygon>
+            </g>
+          </svg>
+        </div>
+
+        <!-- Bottom Viewport Bar: Navigation Hint + Scale Bar -->
+        <div class="flex flex-wrap items-center justify-between gap-gutter-md z-10">
+          <div class="inline-flex items-center gap-gutter-sm px-gutter-md py-gutter-xs rounded bg-light-surface-container-lowest dark:bg-dark-surface-container-low border border-light-outline-variant dark:border-dark-outline-variant">
+            <span class="material-symbols-outlined text-light-on-surface-variant dark:text-dark-on-surface-variant" aria-hidden="true">3d_rotation</span>
+            <span class="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant" data-design-text-token="mono-sm">
+              Orbit: Drag · Zoom: Scroll · Pan: Right-click
+            </span>
+          </div>
+
+          <div class="inline-flex items-center gap-gutter-md px-gutter-md py-gutter-xs rounded bg-light-surface-container-lowest dark:bg-dark-surface-container-low border border-light-outline-variant dark:border-dark-outline-variant">
+            <div class="flex items-center gap-gutter-xs">
+              <span class="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant tabular-nums" data-design-text-token="mono-sm">0</span>
+              <span class="w-12 h-0.5 bg-light-on-surface dark:bg-dark-on-surface"></span>
+              <span class="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant tabular-nums" data-design-text-token="mono-sm">10m</span>
+            </div>
+            <span class="text-light-outline-variant dark:text-dark-outline-variant">|</span>
+            <span class="font-mono text-mono-sm text-light-on-surface dark:text-dark-on-surface" data-design-text-token="mono-sm">N 0°</span>
+          </div>
+        </div>
+      </main>
+
+      <!-- Right Inspector Rail -->
+      <aside class="bg-light-surface-container-lowest dark:bg-dark-surface-container-low border-t lg:border-t-0 lg:border-l border-light-outline-variant dark:border-dark-outline-variant flex flex-col justify-between">
+        <div class="p-gutter-xl flex flex-col gap-gutter-xl">
+          <!-- Project Identity & Status -->
+          <section class="flex flex-col gap-gutter-sm pb-gutter-lg border-b border-light-outline-variant dark:border-dark-outline-variant">
+            <div class="flex items-start justify-between gap-gutter-sm">
+              <div class="flex flex-col gap-gutter-xs">
+                <h1 class="font-headline text-headline-md text-light-on-surface dark:text-dark-on-surface" data-design-text-token="headline-md">77 Mill St Warehouse</h1>
+                <span class="font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant" data-design-text-token="body-sm">77 Mill St, Fremont, CA</span>
+              </div>
+              <!-- COMPONENT: badge-success -->
+              <span data-component-id="badge-success" data-component-type="badge" data-component-variant="success" role="status" class="inline-flex items-center px-gutter-sm py-gutter-xs rounded bg-success-container text-on-success-container border border-success/20 shrink-0">
+                <span class="font-mono text-mono-sm uppercase tracking-wider" data-design-text-token="mono-sm">Delivered</span>
+              </span>
+            </div>
+
+            <div class="grid grid-cols-2 gap-gutter-md pt-gutter-sm">
+              <div class="flex flex-col gap-gutter-xs">
+                <span class="font-label text-label-sm text-light-on-surface-variant dark:text-dark-on-surface-variant uppercase" data-design-text-token="label-sm">Client</span>
+                <span class="font-body text-body-md text-light-on-surface dark:text-dark-on-surface" data-design-text-token="body-md">Acme Builders</span>
+              </div>
+              <div class="flex flex-col gap-gutter-xs">
+                <span class="font-label text-label-sm text-light-on-surface-variant dark:text-dark-on-surface-variant uppercase" data-design-text-token="label-sm">Levels</span>
+                <span class="font-mono text-mono-sm text-light-on-surface dark:text-dark-on-surface" data-design-text-token="mono-sm">Ground · Roof</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Milestone Dates -->
+          <section class="flex flex-col gap-gutter-sm pb-gutter-lg border-b border-light-outline-variant dark:border-dark-outline-variant">
+            <span class="font-label text-label-sm text-light-on-surface-variant dark:text-dark-on-surface-variant uppercase" data-design-text-token="label-sm">Milestone dates</span>
+            <div class="grid grid-cols-2 gap-gutter-md p-gutter-md rounded bg-light-surface-container-low dark:bg-dark-surface-container border border-light-outline-variant dark:border-dark-outline-variant">
+              <div class="flex flex-col">
+                <span class="font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant" data-design-text-token="body-sm">Signed</span>
+                <span class="font-mono text-mono-sm text-light-on-surface dark:text-dark-on-surface tabular-nums" data-design-text-token="mono-sm">Mar 2, 2026</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant" data-design-text-token="body-sm">Scan</span>
+                <span class="font-mono text-mono-sm text-light-on-surface dark:text-dark-on-surface tabular-nums" data-design-text-token="mono-sm">Mar 10, 2026</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant" data-design-text-token="body-sm">Est. Delivery</span>
+                <span class="font-mono text-mono-sm text-light-on-surface dark:text-dark-on-surface tabular-nums" data-design-text-token="mono-sm">Apr 15, 2026</span>
+              </div>
+              <div class="flex flex-col">
+                <span class="font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant" data-design-text-token="body-sm">Delivered</span>
+                <span class="font-mono text-mono-sm text-success dark:text-dark-on-surface tabular-nums" data-design-text-token="mono-sm">Apr 11, 2026</span>
+              </div>
+            </div>
+          </section>
+
+          <!-- Primary Contact -->
+          <section class="flex flex-col gap-gutter-sm pb-gutter-lg border-b border-light-outline-variant dark:border-dark-outline-variant">
+            <span class="font-label text-label-sm text-light-on-surface-variant dark:text-dark-on-surface-variant uppercase" data-design-text-token="label-sm">Primary contact</span>
+            <div class="flex items-center justify-between gap-gutter-md">
+              <div class="flex flex-col">
+                <span class="font-title text-title-md text-light-on-surface dark:text-dark-on-surface" data-design-text-token="title-md">Sam Lee</span>
+                <span class="font-mono text-mono-sm text-light-secondary dark:text-dark-secondary" data-design-text-token="mono-sm">sam@acme.example</span>
+              </div>
+              <span class="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant tabular-nums" data-design-text-token="mono-sm">+1 510 555 0101</span>
+            </div>
+          </section>
+
+          <!-- Point Cloud Scan Module -->
+          <!-- COMPONENT: card-action -->
+          <article data-component-id="card-action" data-component-type="card" data-component-variant="action" class="p-gutter-lg rounded-md bg-light-surface-container-low dark:bg-dark-surface-container border border-light-outline-variant dark:border-dark-outline-variant flex flex-col gap-gutter-md">
+            <header class="flex items-start justify-between gap-gutter-sm">
+              <div class="flex flex-col gap-gutter-xs">
+                <h2 class="font-title text-title-md text-light-on-surface dark:text-dark-on-surface" data-design-text-token="title-md">Point Cloud Scan</h2>
+                <p class="font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant" data-design-text-token="body-sm">Full building 3D laser scan (PTS1 binary)</p>
+              </div>
+              <span class="material-symbols-outlined text-light-primary dark:text-dark-primary" aria-hidden="true">grain</span>
+            </header>
+            <footer>
+              <button id="load-point-cloud-btn" data-component-id="button-primary" data-component-type="button" data-component-variant="primary" type="button" class="w-full inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-gutter-sm rounded bg-light-primary dark:bg-dark-primary text-light-on-primary dark:text-dark-on-primary hover:bg-light-primary-container dark:hover:bg-dark-primary-container transition-colors duration-state-change ease-state-change">
+                <span class="font-label text-label-lg" data-design-text-token="label-lg">Load point cloud</span>
+              </button>
+            </footer>
+          </article>
+
+          <!-- Volume Selection Inspector -->
+          <section id="volume-inspector" class="p-gutter-lg rounded-md border border-dashed border-light-outline-variant dark:border-dark-outline-variant flex flex-col items-center text-center gap-gutter-sm">
+            <span class="material-symbols-outlined text-light-outline dark:text-dark-outline" aria-hidden="true">deployed_code</span>
+            <p class="font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant text-pretty" data-design-text-token="body-sm">
+              Select any 3D room volume in the viewport to inspect its area and structural specifications.
+            </p>
+          </section>
+        </div>
+
+        <!-- Bottom Action Footer -->
+        <footer class="p-gutter-xl pt-0">
+          <!-- COMPONENT: button-secondary -->
+          <button data-component-id="button-secondary" data-component-type="button" data-component-variant="secondary" type="button" class="w-full inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-gutter-sm rounded bg-light-surface-container-lowest dark:bg-dark-surface-container-high text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-highest transition-colors duration-state-change ease-state-change focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-light-secondary dark:focus-visible:ring-dark-secondary">
+            <span class="material-symbols-outlined" aria-hidden="true">flag</span>
+            <span class="font-label text-label-lg" data-design-text-token="label-lg">Report an issue</span>
+          </button>
+        </footer>
+      </aside>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      var html = document.documentElement;
+      var btnLight = document.getElementById('btn-light-mode');
+      var btnDark = document.getElementById('btn-dark-mode');
+
+      function setTheme(isDark) {
+        if (isDark) {
+          html.classList.add('dark');
+        } else {
+          html.classList.remove('dark');
+        }
+        try { localStorage.setItem('sv-theme', isDark ? 'dark' : 'light'); } catch (e) {}
+      }
+
+      try {
+        if (localStorage.getItem('sv-theme') === 'dark') setTheme(true);
+      } catch (e) {}
+
+      btnLight.addEventListener('click', function () { setTheme(false); });
+      btnDark.addEventListener('click', function () { setTheme(true); });
+
+      var volumes = {
+        'loading-bay': {
+          name: 'Loading Bay West',
+          level: 'Ground',
+          area: '460 m²',
+          height: '6.2 m',
+          structure: 'Tilt-up concrete',
+          accuracy: '±2.1 mm'
+        },
+        'main-hall': {
+          name: 'Main Warehouse Hall',
+          level: 'Ground',
+          area: '1,780 m²',
+          height: '11.4 m',
+          structure: 'Steel portal frame',
+          accuracy: '±1.8 mm'
+        },
+        'east-annex': {
+          name: 'East Operations Annex',
+          level: 'Ground',
+          area: '185 m²',
+          height: '4.5 m',
+          structure: 'CMU masonry',
+          accuracy: '±2.4 mm'
+        },
+        'roof-penthouse': {
+          name: 'Mechanical Penthouse',
+          level: 'Roof',
+          area: '55 m²',
+          height: '3.2 m',
+          structure: 'Steel enclosure',
+          accuracy: '±3.0 mm'
+        }
+      };
+
+      var inspector = document.getElementById('volume-inspector');
+      var volumeGroups = document.querySelectorAll('.volume-group');
+
+      function clearSelection() {
+        volumeGroups.forEach(function (g) {
+          g.querySelectorAll('.vol-face-left, .vol-face-right, .vol-face-top').forEach(function (p) {
+            p.classList.remove('stroke-light-primary', 'dark:stroke-dark-primary', 'fill-light-primary/20', 'dark:fill-dark-primary/25');
+          });
+        });
+      }
+
+      volumeGroups.forEach(function (group) {
+        function selectVolume() {
+          var id = group.getAttribute('data-volume-id');
+          var data = volumes[id];
+          if (!data) return;
+          clearSelection();
+          group.querySelectorAll('.vol-face-left, .vol-face-right, .vol-face-top').forEach(function (p) {
+            p.classList.add('stroke-light-primary', 'dark:stroke-dark-primary', 'fill-light-primary/20', 'dark:fill-dark-primary/25');
+          });
+
+          inspector.className = 'p-gutter-lg rounded-md bg-light-surface-container-low dark:bg-dark-surface-container border border-light-primary dark:border-dark-primary flex flex-col gap-gutter-md';
+          inspector.innerHTML =
+            '<div class="flex items-center justify-between gap-gutter-sm">' +
+              '<span class="font-title text-title-md text-light-on-surface dark:text-dark-on-surface" data-design-text-token="title-md">' + data.name + '</span>' +
+              '<span class="font-mono text-mono-sm text-light-primary dark:text-dark-primary uppercase" data-design-text-token="mono-sm">' + data.level + '</span>' +
+            '</div>' +
+            '<div class="grid grid-cols-2 gap-gutter-sm text-left">' +
+              '<div><span class="block font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant">Floor Area</span><span class="font-mono text-mono-sm text-light-on-surface dark:text-dark-on-surface tabular-nums">' + data.area + '</span></div>' +
+              '<div><span class="block font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant">Clear Height</span><span class="font-mono text-mono-sm text-light-on-surface dark:text-dark-on-surface tabular-nums">' + data.height + '</span></div>' +
+              '<div><span class="block font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant">Structure</span><span class="font-body text-body-sm text-light-on-surface dark:text-dark-on-surface">' + data.structure + '</span></div>' +
+              '<div><span class="block font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant">Scan Tolerance</span><span class="font-mono text-mono-sm text-light-on-surface dark:text-dark-on-surface tabular-nums">' + data.accuracy + '</span></div>' +
+            '</div>';
+        }
+
+        group.addEventListener('click', selectVolume);
+        group.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            selectVolume();
+          }
+        });
+      });
+
+      var levelBtns = document.querySelectorAll('.level-btn');
+      levelBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var filter = btn.getAttribute('data-level-filter');
+          levelBtns.forEach(function (b) {
+            b.classList.remove('bg-light-secondary', 'dark:bg-dark-secondary', 'text-light-on-secondary', 'dark:text-dark-on-secondary');
+            b.classList.add('text-light-on-surface', 'dark:text-dark-on-surface');
+          });
+          btn.classList.add('bg-light-secondary', 'dark:bg-dark-secondary', 'text-light-on-secondary', 'dark:text-dark-on-secondary');
+          btn.classList.remove('text-light-on-surface', 'dark:text-dark-on-surface');
+
+          volumeGroups.forEach(function (g) {
+            var lvl = g.getAttribute('data-level');
+            g.style.opacity = (filter === 'all' || filter === lvl) ? '1' : '0.18';
+          });
+        });
+      });
+
+      var viewBtns = document.querySelectorAll('.view-mode-btn');
+      viewBtns.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var mode = btn.getAttribute('data-view-mode');
+          viewBtns.forEach(function (b) {
+            b.classList.remove('bg-light-surface-container-high', 'dark:bg-dark-surface-container-high', 'text-light-on-surface', 'dark:text-dark-on-surface');
+            b.classList.add('text-light-on-surface-variant', 'dark:text-dark-on-surface-variant');
+          });
+          btn.classList.add('bg-light-surface-container-high', 'dark:bg-dark-surface-container-high', 'text-light-on-surface', 'dark:text-dark-on-surface');
+          btn.classList.remove('text-light-on-surface-variant', 'dark:text-dark-on-surface-variant');
+
+          document.querySelectorAll('.vol-face-left, .vol-face-right, .vol-face-top').forEach(function (p) {
+            p.style.fillOpacity = (mode === 'wireframe') ? '0.08' : '1';
+          });
+        });
+      });
+
+      var pcBtn = document.getElementById('load-point-cloud-btn');
+      var pcLoaded = false;
+      pcBtn.addEventListener('click', function () {
+        pcLoaded = !pcLoaded;
+        pcBtn.querySelector('span').textContent = pcLoaded ? 'Hide point cloud (4.2M pts)' : 'Load point cloud';
+      });
+    })();
+  </script>
+
+
+</body></html>
