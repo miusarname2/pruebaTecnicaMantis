@@ -1,0 +1,6 @@
+node_modules/
+.env
+
+# Generated binary clouds
+../kit/data/clouds/*.pts
+kit/data/clouds/*.pts

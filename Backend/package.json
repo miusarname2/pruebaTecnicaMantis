@@ -1,0 +1,25 @@
+{
+  "name": "site-viewer-lite-api",
+  "version": "1.0.0",
+  "description": "Site Viewer Lite — API for 3D building scan viewer",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node --watch index.js",
+    "setup:clouds": "node ../kit/tools/make-cloud.js 1201-30001 && node ../kit/tools/make-cloud.js 1201-30002 400000",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --verbose --forceExit --detectOpenHandles"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.0",
+    "uuid": "^11.0.0"
+  },
+  "devDependencies": {
+    "jest": "^29.7.0",
+    "supertest": "^7.0.0"
+  }
+}
