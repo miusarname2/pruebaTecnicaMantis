@@ -26,13 +26,24 @@ export const IssueModal: React.FC<IssueModalProps> = ({
   const [createdIssueId, setCreatedIssueId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (selectedSpace) {
-      setSpaceId(selectedSpace.id);
-      setLevel(selectedSpace.level);
-    } else if (levels.length > 0 && !level) {
+    if (isOpen) {
+      setValidationError(null);
+      setCreatedIssueId(null);
+      if (selectedSpace && levels.includes(selectedSpace.level)) {
+        setSpaceId(selectedSpace.id);
+        setLevel(selectedSpace.level);
+      } else {
+        setSpaceId('');
+        setLevel(levels[0] || '');
+      }
+    }
+  }, [isOpen, selectedSpace, levels]);
+
+  useEffect(() => {
+    if (levels.length > 0 && !levels.includes(level)) {
       setLevel(levels[0]);
     }
-  }, [selectedSpace, levels]);
+  }, [levels, level]);
 
   if (!isOpen) return null;
 
