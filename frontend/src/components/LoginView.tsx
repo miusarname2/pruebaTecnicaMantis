@@ -69,7 +69,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
             type="button"
             onClick={onToggleTheme}
             aria-label="Toggle light and dark mode"
-            className="inline-flex items-center gap-gutter-xs px-gutter-md py-gutter-xs rounded bg-light-surface-container-low dark:bg-dark-surface-container text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high transition-colors duration-state-change"
+            className="min-h-[44px] inline-flex items-center gap-gutter-xs px-gutter-md py-gutter-xs rounded bg-light-surface-container-low dark:bg-dark-surface-container text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high transition-colors duration-state-change"
           >
             <span className="material-symbols-outlined" aria-hidden="true">
               {isDarkMode ? 'light_mode' : 'dark_mode'}
@@ -114,7 +114,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   value={nameInput}
                   onChange={(e) => setNameInput(e.target.value)}
                   placeholder="e.g. Dana Ortiz, Sam Lee, or Rita Gomez"
-                  className="w-full pl-10 pr-gutter-md py-gutter-sm rounded bg-light-surface-container-lowest dark:bg-dark-surface-container-low text-light-on-surface dark:text-dark-on-surface placeholder:text-light-outline dark:placeholder:text-dark-outline border border-light-outline-variant dark:border-dark-outline-variant font-body text-body-md focus:outline-none focus:border-light-primary dark:focus:border-dark-primary focus:ring-1 focus:ring-light-primary dark:focus:ring-dark-primary transition-colors duration-state-change"
+                  className="w-full min-h-[44px] pl-10 pr-gutter-md py-gutter-sm rounded bg-light-surface-container-lowest dark:bg-dark-surface-container-low text-light-on-surface dark:text-dark-on-surface placeholder:text-light-outline dark:placeholder:text-dark-outline border border-light-outline-variant dark:border-dark-outline-variant font-body text-base focus:outline-none focus:border-light-primary dark:focus:border-dark-primary focus:ring-1 focus:ring-light-primary dark:focus:ring-dark-primary transition-colors duration-state-change"
                   autoFocus
                 />
               </div>
@@ -133,7 +133,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                       key={u.token}
                       type="button"
                       onClick={() => handleSelectUser(u)}
-                      className={`text-left p-gutter-sm rounded border transition-colors duration-state-change flex flex-col ${
+                      className={`min-h-[44px] text-left p-gutter-sm rounded border transition-colors duration-state-change flex flex-col ${
                         isSelected
                           ? 'bg-light-secondary-container dark:bg-dark-secondary-container border-light-secondary dark:border-dark-secondary'
                           : 'bg-light-surface-container-low dark:bg-dark-surface-container border-light-outline-variant dark:border-dark-outline-variant hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high'
@@ -154,7 +154,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
             {/* Submit Button */}
             <button
               type="submit"
-              className="w-full inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-gutter-md rounded bg-light-primary dark:bg-dark-primary text-light-on-primary dark:text-dark-on-primary hover:bg-light-primary-container dark:hover:bg-dark-primary-container transition-colors duration-state-change font-label text-label-lg shadow-sm"
+              className="w-full min-h-[44px] inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-gutter-md rounded bg-light-primary dark:bg-dark-primary text-light-on-primary dark:text-dark-on-primary hover:bg-light-primary-container dark:hover:bg-dark-primary-container transition-colors duration-state-change font-label text-label-lg shadow-sm"
             >
               <span>Sign in to workspace</span>
               <span className="material-symbols-outlined" aria-hidden="true">arrow_forward</span>

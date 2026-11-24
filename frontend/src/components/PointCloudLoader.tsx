@@ -71,7 +71,7 @@ export const PointCloudLoader: React.FC<PointCloudLoaderProps> = ({
           <button
             type="button"
             onClick={onLoadCloud}
-            className="self-start px-gutter-md py-gutter-xs rounded bg-light-error dark:bg-dark-error text-white font-label text-label-sm hover:opacity-90 transition-opacity"
+            className="self-start min-h-[44px] px-gutter-md py-gutter-xs rounded bg-light-error dark:bg-dark-error text-white font-label text-label-sm hover:opacity-90 transition-opacity"
           >
             Try again
           </button>
@@ -84,7 +84,7 @@ export const PointCloudLoader: React.FC<PointCloudLoaderProps> = ({
           <button
             type="button"
             onClick={onLoadCloud}
-            className="w-full inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-gutter-sm rounded bg-light-primary dark:bg-dark-primary text-light-on-primary dark:text-dark-on-primary hover:bg-light-primary-container dark:hover:bg-dark-primary-container transition-colors duration-state-change font-label text-label-lg shadow-xs"
+            className="w-full min-h-[44px] inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-gutter-sm rounded bg-light-primary dark:bg-dark-primary text-light-on-primary dark:text-dark-on-primary hover:bg-light-primary-container dark:hover:bg-dark-primary-container transition-colors duration-state-change font-label text-label-lg shadow-xs"
           >
             <span>Load point cloud</span>
           </button>
@@ -94,7 +94,7 @@ export const PointCloudLoader: React.FC<PointCloudLoaderProps> = ({
           <button
             type="button"
             onClick={onCancelLoad}
-            className="w-full inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-gutter-sm rounded bg-light-surface-container-lowest dark:bg-dark-surface-container-high text-light-error dark:text-dark-error border border-light-error/30 dark:border-dark-error/30 hover:bg-light-error-container/20 transition-colors duration-state-change font-label text-label-lg"
+            className="w-full min-h-[44px] inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-gutter-sm rounded bg-light-surface-container-lowest dark:bg-dark-surface-container-high text-light-error dark:text-dark-error border border-light-error/30 dark:border-dark-error/30 hover:bg-light-error-container/20 transition-colors duration-state-change font-label text-label-lg"
           >
             <span>Cancel download</span>
           </button>
@@ -104,7 +104,7 @@ export const PointCloudLoader: React.FC<PointCloudLoaderProps> = ({
           <button
             type="button"
             onClick={onLoadCloud}
-            className="w-full inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-gutter-sm rounded bg-light-surface-container-lowest dark:bg-dark-surface-container-high text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-highest transition-colors duration-state-change font-label text-label-lg"
+            className="w-full min-h-[44px] inline-flex items-center justify-center gap-gutter-sm px-gutter-lg py-gutter-sm rounded bg-light-surface-container-lowest dark:bg-dark-surface-container-high text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-highest transition-colors duration-state-change font-label text-label-lg"
           >
             <span className="material-symbols-outlined text-base" aria-hidden="true">refresh</span>
             <span>Reload scan</span>
