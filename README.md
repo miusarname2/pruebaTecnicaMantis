@@ -14,12 +14,12 @@ Abre una terminal en la raíz del proyecto `pruebaTecnicaMantis`:
 cd pruebaTecnicaMantis
 ```
 
-### 2. Instalar y Poner en Marcha con un Solo Comando 🚀
+### 2. Instalación y Puesta en Marcha 🚀
 
-Instala todas las dependencias del proyecto (raíz, backend y frontend) y arranca ambos servicios de forma concurrente:
+Prepara el entorno completo y arranca tanto la API como el Visor 3D en simultáneo:
 
 ```bash
-# 1. Instalar dependencias de todos los módulos (Backend y Frontend):
+# 1. Instalar dependencias completas (instala la raíz, Backend y Frontend en un solo paso):
 npm run setup
 
 # 2. Generar nubes de puntos de prueba mínimas (si no están generadas aún):
@@ -28,6 +28,9 @@ npm run setup:clouds
 # 3. Arrancar Backend (puerto 3000) y Frontend (puerto 5173) en una sola terminal:
 npm run dev
 ```
+
+> **¿Qué hace `npm run setup`?**  
+> Ejecuta secuencialmente la instalación de dependencias de la raíz (incluyendo `concurrently` para orquestar ambos procesos), del `Backend/` (Express, Jest, Supertest) y del `frontend/` (React 19, Three.js, Vite). Esto garantiza que no existan bloqueos de permisos de archivos (`EPERM`) en Windows ni dependencias faltantes al ejecutar `npm run dev`.
 
 - **Frontend (Visor Web 3D):** [http://localhost:5173](http://localhost:5173)
 - **Backend API:** [http://localhost:3000](http://localhost:3000)

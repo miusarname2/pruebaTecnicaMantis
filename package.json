@@ -4,7 +4,7 @@
   "private": true,
   "description": "Site Viewer Lite — Full Stack 3D Platform (BIM + LiDAR)",
   "scripts": {
-    "setup": "npm --prefix Backend install && npm --prefix frontend install",
+    "setup": "npm install && npm --prefix Backend install && npm --prefix frontend install",
     "setup:clouds": "npm --prefix Backend run setup:clouds",
     "dev": "concurrently -n \"backend,frontend\" -c \"blue,green\" \"npm --prefix Backend run dev\" \"npm --prefix frontend run dev\"",
     "start": "concurrently -n \"backend,frontend\" -c \"blue,green\" \"npm --prefix Backend start\" \"npm --prefix frontend run dev\"",
