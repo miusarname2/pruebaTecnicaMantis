@@ -20,7 +20,7 @@ Prepara el entorno completo y arranca tanto la API como el Visor 3D en simultán
 
 ```bash
 # 1. Instalar dependencias completas (instala la raíz, Backend y Frontend en un solo paso):
-npm run setup
+npm install && npm run setup
 
 # 2. Generar nubes de puntos de prueba mínimas (si no están generadas aún):
 npm run setup:clouds
