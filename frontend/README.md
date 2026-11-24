@@ -2,7 +2,7 @@
 
 Visor web 3D para gemelos digitales de edificios: muestra los espacios de un proyecto como cajas, carga la nube de puntos del escaneo (PTS1) en un Web Worker y permite reportar un problema. Consume la API de `../Backend`.
 
-**Estado en una línea:** los 7 puntos de la Parte B están implementados y el proyecto compila (`npm run build` OK). Lo que **no** hice o no pude verificar está en [Limitaciones conocidas](#limitaciones-conocidas); lo escribo aquí a propósito.
+**Estado en una línea:** los 7 puntos de la Parte B están implementados, el build es 100% offline (Tailwind CSS v4 y fuentes locales, sin CDN), incluye 10 pruebas unitarias en Vitest y todos los controles cumplen `>= 44 px` / `16 px` en inputs. Lo que aún falta verificar está en [Limitaciones conocidas](#limitaciones-conocidas).
 
 ## Arrancar
 
@@ -16,11 +16,9 @@ cd Backend && npm install && npm run dev
 cd frontend && npm install && npm run dev      # http://localhost:5173
 ```
 
-Otros scripts: `npm run build` (tsc + vite), `npm run preview`, `npm run lint`.
+Otros scripts: `npm test` (Vitest, 10 pruebas), `npm run build` (tsc + vite), `npm run preview`, `npm run lint`.
 
 Las nubes del kit se generan con `node kit/tools/make-cloud.js 1201-30001` (2 M de puntos, ~30 MB) y `... 1201-30002 400000`. Agrega `--truncate` para probar el archivo cortado.
-
-> El `index.html` carga Tailwind (Play CDN) y fuentes de Google en tiempo de ejecución, así que el visor necesita internet. Ver limitaciones.
 
 ## Usuarios de prueba
 
@@ -44,7 +42,7 @@ La pantalla de entrada tiene un campo de nombre y tres chips; cada uno usa el to
 | 4 | Cambiar de proyecto a mitad de carga | Hecho | Al cambiar de proyecto se hace `worker.terminate()` (corta la descarga) y se limpia la nube antes de pedir el nuevo proyecto. |
 | 5 | Errores honestos | Hecho | 404, 401, red caída, magic inválido y archivo truncado muestran un mensaje claro y "Try again". El truncado se detecta comparando el conteo del encabezado con los bytes recibidos. |
 | 6 | Reportar problema | Hecho | Modal propio (sin `alert`/`prompt`), título 1–120 con contador, nivel, espacio opcional preseleccionado; muestra éxito o error del POST. |
-| 7 | iPad | **Parcial** | Layout sin scroll horizontal y `touch-action: manipulation`. Cumplen `>= 44 px` el filtro de nivel, el inspector de espacios y el cierre del modal; siguen por debajo de `44 px` los botones del Navbar (`~22 px` / `32 px`), `Load point cloud` / `Cancel download` (`~34 px`), `Cancel` / `Submit` del modal (`~34 px`) y los campos del formulario (`~36 px`, texto `14 px`). No se probó en iPad físico. |
+| 7 | iPad | Hecho (sin prueba física) | Layout sin scroll horizontal, `touch-action: manipulation`, todos los botones y controles `>= 44 px` (`min-h-[44px]`/`min-w-[44px]`), e inputs/selects de `16 px` (`text-base`) para evitar zoom accidental en Safari sin bloquear el viewport. |
 
 Detalles de comportamiento:
 
@@ -75,19 +73,15 @@ El `postMessage` final transfiere los buffers de cada nivel sin copiarlos. La de
 Ordenadas por importancia.
 
 1. **Rendimiento sin medir ni LOD/submuestreo.** No se midieron FPS con 2 M de puntos en un computador normal ni en un iPad físico. No hay LOD, culling ni submuestreo: se dibujan los 2 M de puntos completos (tamaño fijo de 1,5 px, antialias activo, `pixelRatio` limitado a 2) y el bucle de render corre siempre.
-2. **iPad parcial (controles < 44 px restantes, inputs de 14 px y sin prueba física).** Solo cumplen `min-h-[44px]`/`min-w-[44px]` el filtro de nivel, el inspector de espacios y el botón de cerrar del modal. Siguen por debajo: botones del Navbar (`~22 px`), botón de tema (`32 px`), `"Load point cloud"` / `"Cancel download"` (`~34 px`), `"Cancel"` / `"Submit"` del modal (`~34 px`) y los inputs/selects (`~36 px`, con fuente `14 px` por debajo de `16 px` para evitar zoom en Safari). **No se probó en un iPad real.**
+2. **Sin prueba en iPad físico.** Todos los controles cumplen `>= 44 px` e inputs `16 px` en CSS/DOM, pero no se validó manualmente en un iPad real con Safari.
 3. **Picos de memoria en el worker.** Durante la descarga coexisten los trozos descargados y el buffer unido antes de particionar por nivel. Con 30 MB es aceptable; con 300 MB en iPad puede provocar recarga de pestaña por memoria.
-4. **Sin pruebas en el frontend.** Solo `lint` y `tsc`. Las pruebas automáticas están en el backend.
-5. **Dependencia de internet:** Tailwind por CDN (pensado para desarrollo, no producción) y Google Fonts. Un build de producción debería compilar Tailwind y alojar las fuentes.
-6. **Textos decorativos de la pantalla de entrada** ("IFC4 · E57 Compatible", "0.02m · 2.0M PTS") son estáticos: el visor solo lee PTS1 y no importa IFC ni E57.
+4. **Textos decorativos de la pantalla de entrada** ("IFC4 · E57 Compatible", "0.02m · 2.0M PTS") son estáticos: el visor solo lee PTS1 y no importa IFC ni E57.
 
 ## Con un día más
 
-1. Medir FPS y memoria reales; implementar submuestreo (`setDrawRange`) durante el gesto de órbita, ajustar `pixelRatio`/antialias en táctil y LOD por octree si hace falta.
-2. Subir a `>= 44 px` los controles restantes (Navbar, `PointCloudLoader`, `Cancel`/`Submit` e inputs del modal), subir inputs a `16 px` y probar en iPad real.
-3. Parsear la nube por trozos en el worker en vez de unir todo el archivo en RAM.
-4. Pruebas con Vitest para el cliente de API y el parser PTS1 (casos: truncado, magic inválido, N = 0).
-5. Compilar Tailwind en el build y alojar las fuentes.
+1. Medir FPS y memoria reales en computador y iPad físico; implementar submuestreo (`setDrawRange`) durante el gesto de órbita, ajustar `pixelRatio`/antialias en táctil y LOD por octree si hace falta.
+2. Parsear la nube por trozos en el worker en vez de unir todo el archivo en RAM.
+3. Añadir pruebas de componentes UI con Testing Library además de las pruebas unitarias actuales de Vitest (`pts1Parser` y `api/client`).
 
 ## Estructura
 

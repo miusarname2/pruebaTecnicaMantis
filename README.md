@@ -25,7 +25,7 @@ Este único comando ejecuta en orden:
 npm test
 ```
 
-Ejecuta la suite de **45 pruebas automatizadas** de la API (Jest + Supertest).
+Ejecuta las **55 pruebas automatizadas** del proyecto (45 de la API en Jest + Supertest y 10 del Frontend en Vitest).
 
 ### Generación Manual de Nubes de Puntos (Opcional)
 
@@ -73,7 +73,9 @@ node kit/tools/make-cloud.js 1201-30001 2000000 --truncate
   - Web Worker dedicado ([frontend/src/workers/cloudParser.worker.ts](./frontend/src/workers/cloudParser.worker.ts)) que descarga, valida el encabezado PTS1, clasifica los puntos por nivel fuera del hilo principal y transfiere los buffers `Float32Array`/`Uint8Array` sin copiar memoria (`Transferable`).
   - Cancelación segura al cambiar de proyecto (`worker.terminate()` para la nube + `AbortController` y control de versión de petición para detalle/espacios).
   - Errores honestos con botón *"Try again"* y modal de reporte de issues sin `alert()`/`prompt()`.
-  - Soporte táctil parcial para iPad: layout sin scroll horizontal, `OrbitControls` multitáctil y botones `>= 44 px` en filtro de nivel, inspector de espacios y cierre del modal (faltan otros controles secundarios, ver *Qué falta*).
+  - Controles táctiles `>= 44 px` en toda la interfaz, inputs/selects de `16 px` para evitar zoom en Safari, layout sin scroll horizontal y `OrbitControls` multitáctil para iPad.
+  - Build 100% offline con Tailwind CSS v4 (`@tailwindcss/vite`), `@fontsource` y `material-symbols` empaquetados localmente (sin CDN).
+  - **10 pruebas unitarias en Vitest** cubriendo `parsePts1Buffer` (Z-up→Y-up, niveles, `N=0`, truncado, magic inválido) y `api/client` (Bearer, 401, errores JSON, red caída y `AbortError`).
 - **Parte C — Preguntas Cortas:**
   - Respondidas en [ANSWERS.md](./ANSWERS.md) dentro del límite de 120 palabras por pregunta.
 
@@ -92,17 +94,14 @@ node kit/tools/make-cloud.js 1201-30001 2000000 --truncate
 ## Qué Falta y Qué Haría con un Día Más
 
 ### Qué falta (limitaciones conocidas)
-- **iPad parcial (controles < 44 px restantes e inputs de 14 px):** Cumplen `>= 44 px` el filtro de nivel, el inspector y el cierre del modal; siguen por debajo los botones del Navbar (`~22 px` / `32 px`), `Load point cloud` / `Cancel download` (`~34 px`), `Cancel` / `Submit` del modal (`~34 px`) y los inputs/selects (`~36 px` con fuente `14 px`). Tampoco se probó en un iPad físico.
 - **Rendimiento sin medir ni LOD/submuestreo:** No se midieron FPS formales con 2,000,000 de puntos ni en computador normal ni en iPad físico. No hay LOD ni submuestreo: se dibujan los 2 M de puntos completos.
-- **Pruebas unitarias en el Frontend:** Solo se ejecuta `tsc -b && vite build` y ESLint; las pruebas automáticas están en el Backend.
-- **Tailwind por CDN en `index.html`:** Útil para desarrollo rápido, pero requiere conexión a internet.
+- **Prueba en iPad físico:** Todos los controles cumplen `>= 44 px` e inputs `16 px` en el DOM, pero falta validación manual en hardware real.
 - **Persistencia de issues:** Los reportes se guardan en memoria (se pierden al reiniciar el servidor).
 
 ### Qué haría con un día más
 1. Medir FPS y memoria en un iPad real e implementar submuestreo adaptativo (`setDrawRange`) durante gestos de órbita para mantener 60 FPS fluidos.
 2. Parsear y transferir la nube por trozos (*streaming parsing*) para reducir el pico de RAM en archivos >100 MB.
-3. Agregar pruebas con Vitest para el cliente API y el parser binario PTS1 (archivos truncados, magic inválido, $N=0$).
-4. Compilar Tailwind CSS en el build de Vite, alojar fuentes localmente y persistir issues en disco.
+3. Agregar pruebas de integración UI con Testing Library y persistir los issues en disco.
 
 ---
 
