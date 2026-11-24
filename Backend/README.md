@@ -17,7 +17,7 @@ npm install && npm start      # http://localhost:3000
 | `npm start` | Servidor (`node index.js`) |
 | `npm run dev` | Servidor con auto-reload (`node --watch`) |
 | `npm run setup:clouds` | Genera las dos nubes del kit en `kit/data/clouds/` (2 M y 400 k puntos) |
-| `npm test` | Jest + Supertest (44 pruebas) |
+| `npm test` | Jest + Supertest (45 pruebas) |
 
 - **Puerto:** `PORT` (por defecto `3000`; el proxy de Vite del frontend apunta a `3000`).
 - **Nubes de puntos:** `GET /api/projects/:id/cloud` responde 404 si el `.pts` no
@@ -59,8 +59,8 @@ Las rutas `/api/*` pasan primero por autenticación, así que sin token incluso 
 | 3 | Contactos según rol | Para `client` se descartan `email` y `phone` de cada contacto; `staff` recibe el contacto completo | `utils/sanitize.js` |
 | 4 | Ajeno = inexistente | `getById` devuelve `null` en ambos casos y los controladores responden con el mismo helper: 404 `{ "error": "Project not found" }`. Aplica a detalle, spaces, cloud e issues | `models/projectModel.js`, controladores |
 | 5 | Entradas malas → 4xx | ID con formato `NNNN-NNNNN` (400 si no); JSON roto → 400; `title` string de 1–120 caracteres tras `trim()`; `level` debe estar en `project.levels`; `spaceId` string y existente en los espacios del proyecto. Errores 4xx con `status` se respetan; el resto → 500 genérico sin detalles | `middlewares/validators.js`, `errorHandler.js`, `issueController.js` |
-| 6 | ETag y caché privada | ETag = MD5 del JSON ya sanitizado (fuerte, no `W/`); `Cache-Control: private, no-cache`; 304 con cuerpo vacío si `If-None-Match` coincide. Staff y client producen cuerpos distintos, por lo tanto ETags distintos | `controllers/projectController.js`, `utils/etag.js` |
-| 7 | Range sobre la nube | `fs.createReadStream` con `{ start, end }`; 206 + `Content-Range` + `Content-Length`; `Accept-Ranges: bytes` siempre. Proyecto con `cloud: null` → 404 | `controllers/projectController.js` |
+| 6 | ETag y caché privada | ETag = MD5 del JSON ya sanitizado (`"<hash>"`); `Cache-Control: private, no-cache` y `Vary: Authorization`; 304 con cuerpo vacío si `If-None-Match` coincide (soporta listas, `*` y prefijo `W/`). Staff y client producen cuerpos distintos, por lo tanto ETags distintos | `controllers/projectController.js`, `utils/etag.js`, `middlewares/auth.js` |
+| 7 | Range sobre la nube | `fs.createReadStream` con `{ start, end }` y `stream.pipeline`; 206 + `Content-Range` + `Content-Length`; `Accept-Ranges: bytes` siempre. Proyecto con `cloud: null` → 404 | `controllers/projectController.js` |
 
 Orden de las comprobaciones: autenticación → formato del ID → pertenencia (404) → validación del cuerpo.
 Un cliente que escribe en un proyecto ajeno recibe 404 antes de que se valide su cuerpo.
@@ -68,17 +68,13 @@ Un cliente que escribe en un proyecto ajeno recibe 404 antes de que se valide su
 ## Límites conocidos
 
 - **Range:** se aceptan `bytes=a-b` y `bytes=a-`. No hay rangos de sufijo (`bytes=-N`) ni múltiples; un rango fuera del archivo responde 416 en lugar de recortarse.
-- **Streaming de la nube:** usa `.pipe()` sin manejar el evento `error` del stream ni cerrarlo cuando el cliente aborta (hoy, cancelar a mitad de descarga deja el stream abierto hasta terminar). Mejor: `stream.pipeline`.
-- **Sin `Vary: Authorization`:** la protección frente a cachés compartidas es `Cache-Control: private`.
-- **If-None-Match:** comparación exacta con un solo ETag; no interpreta listas ni `W/`.
 - **Reportes:** viven en memoria (se pierden al reiniciar) y no hay endpoint para listarlos.
 - **CORS** abierto a cualquier origen (`cors()` sin opciones). La autenticación es por cabecera, no por cookie.
 - Sin límite de peticiones (rate limiting) ni logs estructurados.
 
 ## Con un día más
 
-- Pasar la nube a `stream.pipeline` con manejo de errores y aborto del cliente, y soportar rangos de sufijo.
-- Añadir `Vary: Authorization` y ETag también para la nube (`If-Range`).
+- Soportar rangos de sufijo (`bytes=-N`) y ETag/`If-Range` también para la nube.
 - Persistir los reportes y exponer su consulta, con pruebas.
 - Restringir CORS al origen del visor y añadir rate limiting.
 
@@ -88,13 +84,13 @@ Un cliente que escribe en un proyecto ajeno recibe 404 antes de que se valide su
 npm test
 ```
 
-Jest + Supertest sobre ES Modules nativos (`--experimental-vm-modules`). 44 pruebas en 3 archivos:
+Jest + Supertest sobre ES Modules nativos (`--experimental-vm-modules`). 45 pruebas en 3 archivos:
 
 | Archivo | Pruebas | Cubre |
 | :--- | :-: | :--- |
 | `tests/auth.test.js` | 6 | Regla 1: sin token, token inválido, sin prefijo `Bearer`, valor vacío, token válido staff y client |
 | `tests/issues.test.js` | 14 | Regla 5 y creación: título vacío/solo espacios/121 y 120 caracteres, nivel faltante o inexistente, `spaceId` inválido o numérico, JSON roto, proyecto ajeno → 404 |
-| `tests/projects.test.js` | 24 | Reglas 2, 3, 4, 6 y 7, ID mal formado y path traversal, y filtrado de la lista por rol |
+| `tests/projects.test.js` | 25 | Reglas 2, 3, 4, 6 (ETag, `Vary: Authorization`, listas/`W/`) y 7, ID mal formado y path traversal, y filtrado de la lista por rol |
 
 La regla 4 se prueba comparando status y cuerpo de "ajeno" frente a "inexistente".
 

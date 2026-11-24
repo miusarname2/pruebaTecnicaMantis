@@ -44,7 +44,7 @@ La pantalla de entrada tiene un campo de nombre y tres chips; cada uno usa el to
 | 4 | Cambiar de proyecto a mitad de carga | Hecho | Al cambiar de proyecto se hace `worker.terminate()` (corta la descarga) y se limpia la nube antes de pedir el nuevo proyecto. |
 | 5 | Errores honestos | Hecho | 404, 401, red caída, magic inválido y archivo truncado muestran un mensaje claro y "Try again". El truncado se detecta comparando el conteo del encabezado con los bytes recibidos. |
 | 6 | Reportar problema | Hecho | Modal propio (sin `alert`/`prompt`), título 1–120 con contador, nivel, espacio opcional preseleccionado; muestra éxito o error del POST. |
-| 7 | iPad | **Parcial** | Layout sin scroll horizontal y `touch-action: manipulation`. Los 44 px y los 16 px en inputs **no se cumplen** todavía (ver abajo). |
+| 7 | iPad | **Parcial** | Layout sin scroll horizontal, `touch-action: manipulation` y botones de al menos `44 × 44 px` (`min-h-[44px]`/`min-w-[44px]`). Falta subir inputs de 14 px a 16 px y probar en iPad físico. |
 
 Detalles de comportamiento:
 
@@ -56,11 +56,11 @@ Detalles de comportamiento:
 
 ```
 fetch (en el worker) → trozos en memoria → un Uint8Array → valida PTS1 y N
-  → Float32Array de posiciones + Uint8Array de colores → postMessage con transferencia
-  → hilo principal: clasifica por nivel → un THREE.Points por nivel
+  → clasifica por nivel en el worker → buckets { level, Float32Array, Uint8Array }
+  → postMessage con transferencia zero-copy → hilo principal: un THREE.Points por nivel
 ```
 
-El `postMessage` final transfiere los buffers sin copiarlos. El resto del pipeline **sí hace copias** (ver limitaciones).
+El `postMessage` final transfiere los buffers de cada nivel sin copiarlos. La descarga inicial en el worker aún acumula los trozos en un `Uint8Array` antes de parsear (ver limitaciones).
 
 ## Decisiones
 
@@ -74,23 +74,20 @@ El `postMessage` final transfiere los buffers sin copiarlos. El resto del pipeli
 
 Ordenadas por importancia.
 
-1. **iPad, parcial.** Los botones de nivel y vista miden ~22–34 px de alto (`py` de 4–8 px con texto de 11–13 px), no 44. Los inputs usan 14 px, por debajo de los 16 px con que Safari evita el zoom al enfocar. Solo se previene con `maximum-scale=1, user-scalable=no` en el viewport, que además perjudica la accesibilidad. **No lo probé en un iPad real.**
-2. **Rendimiento sin medir.** No medí FPS con 2 M de puntos ni en iPad. No hay LOD, culling ni submuestreo: se dibujan todos los puntos (tamaño fijo de 1,5 px, antialias activo, `pixelRatio` limitado a 2) y el bucle de render corre siempre.
-3. **La clasificación por nivel bloquea el hilo principal.** El worker no congela la UI, pero `setPointCloud` recorre los 2 M de puntos contra todas las cajas en el hilo principal. Hay un tirón al terminar la carga.
-4. **Picos de memoria.** Durante la carga coexisten: trozos descargados, el buffer unido, `positions` + `colors` y las copias por nivel. Con el archivo de 30 MB es aceptable; con uno de 300 MB en iPad es el primer sospechoso de que Safari mate la pestaña.
-5. **Peticiones de API sin cancelar.** Al cambiar de proyecto rápido, la respuesta lenta del proyecto anterior podría pisar la del nuevo (detalle y espacios). La nube sí queda protegida (punto 4 de la prueba); esto no.
-6. **Sin pruebas en el frontend.** Solo `lint` y `tsc`. Las pruebas automáticas están en el backend.
-7. **Dependencia de internet:** Tailwind por CDN (pensado para desarrollo, no producción) y Google Fonts. Un build de producción debería compilar Tailwind y alojar las fuentes.
-8. **Textos decorativos de la pantalla de entrada** ("IFC4 · E57 Compatible", "0.02m · 2.0M PTS") son estáticos: el visor solo lee PTS1 y no importa IFC ni E57.
+1. **Rendimiento sin medir ni LOD/submuestreo.** No se midieron FPS con 2 M de puntos en un computador normal ni en un iPad físico. No hay LOD, culling ni submuestreo: se dibujan los 2 M de puntos completos (tamaño fijo de 1,5 px, antialias activo, `pixelRatio` limitado a 2) y el bucle de render corre siempre.
+2. **iPad sin prueba física e inputs de 14 px.** Todos los controles y botones ya cumplen `>= 44 px`, pero los campos de texto siguen en 14 px (por debajo de 16 px con que Safari evita el zoom al enfocar sin depender del viewport). **No se probó en un iPad real.**
+3. **Picos de memoria en el worker.** Durante la descarga coexisten los trozos descargados y el buffer unido antes de particionar por nivel. Con 30 MB es aceptable; con 300 MB en iPad puede provocar recarga de pestaña por memoria.
+4. **Sin pruebas en el frontend.** Solo `lint` y `tsc`. Las pruebas automáticas están en el backend.
+5. **Dependencia de internet:** Tailwind por CDN (pensado para desarrollo, no producción) y Google Fonts. Un build de producción debería compilar Tailwind y alojar las fuentes.
+6. **Textos decorativos de la pantalla de entrada** ("IFC4 · E57 Compatible", "0.02m · 2.0M PTS") son estáticos: el visor solo lee PTS1 y no importa IFC ni E57.
 
 ## Con un día más
 
-1. Subir controles a 44 px y inputs a 16 px, quitar `user-scalable=no`, y probar en iPad real.
-2. Medir FPS y memoria; luego, en este orden: submuestreo durante el gesto, menos `pixelRatio`/antialias en táctil, y LOD por octree solo si hace falta.
-3. Mover la clasificación por nivel al worker (o a un segundo worker) y parsear por trozos en vez de unir todo el archivo.
-4. `AbortController` en las peticiones de API y un test del cambio de proyecto a mitad de carga.
-5. Pruebas con Vitest para el cliente de API y el parser PTS1 (casos: truncado, magic inválido, N = 0).
-6. Compilar Tailwind en el build y alojar las fuentes.
+1. Medir FPS y memoria reales; implementar submuestreo (`setDrawRange`) durante el gesto de órbita, ajustar `pixelRatio`/antialias en táctil y LOD por octree si hace falta.
+2. Subir inputs a 16 px, quitar restricciones de escala en viewport y probar en iPad real.
+3. Parsear la nube por trozos en el worker en vez de unir todo el archivo en RAM.
+4. Pruebas con Vitest para el cliente de API y el parser PTS1 (casos: truncado, magic inválido, N = 0).
+5. Compilar Tailwind en el build y alojar las fuentes.
 
 ## Estructura
 

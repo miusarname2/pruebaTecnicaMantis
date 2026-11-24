@@ -92,7 +92,7 @@ node kit/tools/make-cloud.js 1201-30001 2000000 --truncate
 ## Qué Falta y Qué Haría con un Día Más
 
 ### Qué falta (limitaciones conocidas)
-- **Medición de FPS en iPad físico:** No se perfilaron los cuadros por segundo ni el consumo de memoria en un iPad real con Safari.
+- **Rendimiento sin medir ni LOD/submuestreo:** No se midieron FPS formales con 2,000,000 de puntos ni en computador normal ni en iPad físico. No hay LOD ni submuestreo: se dibujan los 2 M de puntos completos.
 - **Pruebas unitarias en el Frontend:** Solo se ejecuta `tsc -b && vite build` y ESLint; las pruebas automáticas están en el Backend.
 - **Tailwind por CDN en `index.html`:** Útil para desarrollo rápido, pero requiere conexión a internet.
 - **Persistencia de issues:** Los reportes se guardan en memoria (se pierden al reiniciar el servidor).
