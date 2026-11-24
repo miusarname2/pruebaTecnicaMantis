@@ -1,5 +1,161 @@
-/* Site Viewer Studio Design System — Base and Utility Styles */
+@import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
+@theme {
+  /* Colors */
+  --color-success: #2E6F40;
+  --color-on-success: #FFFFFF;
+  --color-success-container: #D3F0D9;
+  --color-on-success-container: #143D20;
+  --color-grid-line-light: #E2DDD4;
+  --color-grid-line-dark: #2A2823;
+
+  --color-light-primary: #AB2E07;
+  --color-light-on-primary: #FFFFFF;
+  --color-light-primary-container: #CE4621;
+  --color-light-on-primary-container: #FFFBFF;
+  --color-light-secondary: #33628B;
+  --color-light-on-secondary: #FFFFFF;
+  --color-light-secondary-container: #E8F1FF;
+  --color-light-on-secondary-container: #154A72;
+  --color-light-tertiary: #006191;
+  --color-light-on-tertiary: #FFFFFF;
+  --color-light-error: #BA1A1A;
+  --color-light-on-error: #FFFFFF;
+  --color-light-error-container: #FFDAD6;
+  --color-light-error-text: #93000A;
+  --color-light-background: #FEF9F0;
+  --color-light-on-background: #1D1C16;
+  --color-light-surface: #FEF9F0;
+  --color-light-surface-dim: #DED9D1;
+  --color-light-surface-bright: #FFFFFF;
+  --color-light-surface-container-lowest: #FFFFFF;
+  --color-light-surface-container-low: #F8F3EA;
+  --color-light-surface-container: #F2EDE5;
+  --color-light-surface-container-high: #EDE8DF;
+  --color-light-surface-container-highest: #E7E2D9;
+  --color-light-on-surface: #1D1C16;
+  --color-light-surface-variant: #EDE8DF;
+  --color-light-on-surface-variant: #615E58;
+  --color-light-outline: #7A7770;
+  --color-light-outline-variant: #CAC6BE;
+  --color-light-inverse-surface: #32302B;
+  --color-light-inverse-on-surface: #F5F0E7;
+
+  --color-dark-primary: #F4613A;
+  --color-dark-on-primary: #2A0400;
+  --color-dark-primary-container: #AF300A;
+  --color-dark-on-primary-container: #FFEDE9;
+  --color-dark-secondary: #82AFDD;
+  --color-dark-on-secondary: #001D33;
+  --color-dark-secondary-container: #154A72;
+  --color-dark-on-secondary-container: #CFE5FF;
+  --color-dark-tertiary: #8FCDFF;
+  --color-dark-on-tertiary: #00344F;
+  --color-dark-error: #FFB4AB;
+  --color-dark-on-error: #690005;
+  --color-dark-error-container: #93000A;
+  --color-dark-background: #15130F;
+  --color-dark-on-background: #E7E2D9;
+  --color-dark-surface: #15130F;
+  --color-dark-surface-dim: #0F0E0A;
+  --color-dark-surface-bright: #2C2A24;
+  --color-dark-surface-container-lowest: #0F0E0A;
+  --color-dark-surface-container-low: #1D1C16;
+  --color-dark-surface-container: #21201A;
+  --color-dark-surface-container-high: #2C2A24;
+  --color-dark-surface-container-highest: #36352F;
+  --color-dark-on-surface: #E7E2D9;
+  --color-dark-surface-variant: #2C2A24;
+  --color-dark-on-surface-variant: #AFABA3;
+  --color-dark-outline: #949089;
+  --color-dark-outline-variant: #494740;
+  --color-dark-inverse-surface: #E7E2D9;
+  --color-dark-inverse-on-surface: #32302B;
+
+  /* Border Radius */
+  --radius-sm: 2px;
+  --radius-DEFAULT: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-full: 9999px;
+
+  /* Spacing */
+  --spacing-gutter-xs: 4px;
+  --spacing-gutter-sm: 8px;
+  --spacing-gutter-md: 12px;
+  --spacing-gutter-lg: 16px;
+  --spacing-gutter-xl: 24px;
+  --spacing-section: 32px;
+  --spacing-page-margin: 24px;
+
+  /* Font Families */
+  --font-display: "Archivo", sans-serif;
+  --font-headline: "Archivo", sans-serif;
+  --font-title: "Archivo", sans-serif;
+  --font-body: "Reddit Sans", sans-serif;
+  --font-label: "Reddit Sans", sans-serif;
+  --font-mono: "Source Code Pro", monospace;
+
+  /* Font Sizes */
+  --text-display-md: 36px;
+  --text-display-md--line-height: 44px;
+  --text-display-md--letter-spacing: -0.75px;
+  --text-display-md--font-weight: 600;
+
+  --text-display-md-mobile: 28px;
+  --text-display-md-mobile--line-height: 36px;
+  --text-display-md-mobile--letter-spacing: -0.5px;
+  --text-display-md-mobile--font-weight: 600;
+
+  --text-headline-lg: 24px;
+  --text-headline-lg--line-height: 30px;
+  --text-headline-lg--letter-spacing: -0.3px;
+  --text-headline-lg--font-weight: 600;
+
+  --text-headline-md: 18px;
+  --text-headline-md--line-height: 24px;
+  --text-headline-md--letter-spacing: -0.2px;
+  --text-headline-md--font-weight: 600;
+
+  --text-title-md: 15px;
+  --text-title-md--line-height: 20px;
+  --text-title-md--letter-spacing: 0px;
+  --text-title-md--font-weight: 600;
+
+  --text-body-md: 14px;
+  --text-body-md--line-height: 20px;
+  --text-body-md--letter-spacing: 0px;
+  --text-body-md--font-weight: 400;
+
+  --text-body-sm: 12px;
+  --text-body-sm--line-height: 16px;
+  --text-body-sm--letter-spacing: 0px;
+  --text-body-sm--font-weight: 400;
+
+  --text-label-lg: 13px;
+  --text-label-lg--line-height: 18px;
+  --text-label-lg--letter-spacing: 0px;
+  --text-label-lg--font-weight: 600;
+
+  --text-label-sm: 11px;
+  --text-label-sm--line-height: 14px;
+  --text-label-sm--letter-spacing: 0.4px;
+  --text-label-sm--font-weight: 600;
+
+  --text-mono-sm: 12px;
+  --text-mono-sm--line-height: 16px;
+  --text-mono-sm--letter-spacing: 0px;
+  --text-mono-sm--font-weight: 500;
+
+  /* Transitions */
+  --transition-duration-state-change: 120ms;
+  --transition-duration-panel-transition: 180ms;
+  --transition-timing-function-state-change: ease-out;
+  --transition-timing-function-panel-transition: cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* Site Viewer Studio Design System — Base and Utility Styles */
 * {
   box-sizing: border-box;
 }
