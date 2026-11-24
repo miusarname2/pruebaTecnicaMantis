@@ -44,7 +44,7 @@ La pantalla de entrada tiene un campo de nombre y tres chips; cada uno usa el to
 | 4 | Cambiar de proyecto a mitad de carga | Hecho | Al cambiar de proyecto se hace `worker.terminate()` (corta la descarga) y se limpia la nube antes de pedir el nuevo proyecto. |
 | 5 | Errores honestos | Hecho | 404, 401, red caída, magic inválido y archivo truncado muestran un mensaje claro y "Try again". El truncado se detecta comparando el conteo del encabezado con los bytes recibidos. |
 | 6 | Reportar problema | Hecho | Modal propio (sin `alert`/`prompt`), título 1–120 con contador, nivel, espacio opcional preseleccionado; muestra éxito o error del POST. |
-| 7 | iPad | **Parcial** | Layout sin scroll horizontal, `touch-action: manipulation` y botones de al menos `44 × 44 px` (`min-h-[44px]`/`min-w-[44px]`). Falta subir inputs de 14 px a 16 px y probar en iPad físico. |
+| 7 | iPad | **Parcial** | Layout sin scroll horizontal y `touch-action: manipulation`. Cumplen `>= 44 px` el filtro de nivel, el inspector de espacios y el cierre del modal; siguen por debajo de `44 px` los botones del Navbar (`~22 px` / `32 px`), `Load point cloud` / `Cancel download` (`~34 px`), `Cancel` / `Submit` del modal (`~34 px`) y los campos del formulario (`~36 px`, texto `14 px`). No se probó en iPad físico. |
 
 Detalles de comportamiento:
 
@@ -75,7 +75,7 @@ El `postMessage` final transfiere los buffers de cada nivel sin copiarlos. La de
 Ordenadas por importancia.
 
 1. **Rendimiento sin medir ni LOD/submuestreo.** No se midieron FPS con 2 M de puntos en un computador normal ni en un iPad físico. No hay LOD, culling ni submuestreo: se dibujan los 2 M de puntos completos (tamaño fijo de 1,5 px, antialias activo, `pixelRatio` limitado a 2) y el bucle de render corre siempre.
-2. **iPad sin prueba física e inputs de 14 px.** Todos los controles y botones ya cumplen `>= 44 px`, pero los campos de texto siguen en 14 px (por debajo de 16 px con que Safari evita el zoom al enfocar sin depender del viewport). **No se probó en un iPad real.**
+2. **iPad parcial (controles < 44 px restantes, inputs de 14 px y sin prueba física).** Solo cumplen `min-h-[44px]`/`min-w-[44px]` el filtro de nivel, el inspector de espacios y el botón de cerrar del modal. Siguen por debajo: botones del Navbar (`~22 px`), botón de tema (`32 px`), `"Load point cloud"` / `"Cancel download"` (`~34 px`), `"Cancel"` / `"Submit"` del modal (`~34 px`) y los inputs/selects (`~36 px`, con fuente `14 px` por debajo de `16 px` para evitar zoom en Safari). **No se probó en un iPad real.**
 3. **Picos de memoria en el worker.** Durante la descarga coexisten los trozos descargados y el buffer unido antes de particionar por nivel. Con 30 MB es aceptable; con 300 MB en iPad puede provocar recarga de pestaña por memoria.
 4. **Sin pruebas en el frontend.** Solo `lint` y `tsc`. Las pruebas automáticas están en el backend.
 5. **Dependencia de internet:** Tailwind por CDN (pensado para desarrollo, no producción) y Google Fonts. Un build de producción debería compilar Tailwind y alojar las fuentes.
@@ -84,7 +84,7 @@ Ordenadas por importancia.
 ## Con un día más
 
 1. Medir FPS y memoria reales; implementar submuestreo (`setDrawRange`) durante el gesto de órbita, ajustar `pixelRatio`/antialias en táctil y LOD por octree si hace falta.
-2. Subir inputs a 16 px, quitar restricciones de escala en viewport y probar en iPad real.
+2. Subir a `>= 44 px` los controles restantes (Navbar, `PointCloudLoader`, `Cancel`/`Submit` e inputs del modal), subir inputs a `16 px` y probar en iPad real.
 3. Parsear la nube por trozos en el worker en vez de unir todo el archivo en RAM.
 4. Pruebas con Vitest para el cliente de API y el parser PTS1 (casos: truncado, magic inválido, N = 0).
 5. Compilar Tailwind en el build y alojar las fuentes.

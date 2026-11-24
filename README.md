@@ -73,7 +73,7 @@ node kit/tools/make-cloud.js 1201-30001 2000000 --truncate
   - Web Worker dedicado ([frontend/src/workers/cloudParser.worker.ts](./frontend/src/workers/cloudParser.worker.ts)) que descarga, valida el encabezado PTS1, clasifica los puntos por nivel fuera del hilo principal y transfiere los buffers `Float32Array`/`Uint8Array` sin copiar memoria (`Transferable`).
   - Cancelación segura al cambiar de proyecto (`worker.terminate()` para la nube + `AbortController` y control de versión de petición para detalle/espacios).
   - Errores honestos con botón *"Try again"* y modal de reporte de issues sin `alert()`/`prompt()`.
-  - Controles táctiles de al menos `44 px` de alto/ancho para iPad.
+  - Soporte táctil parcial para iPad: layout sin scroll horizontal, `OrbitControls` multitáctil y botones `>= 44 px` en filtro de nivel, inspector de espacios y cierre del modal (faltan otros controles secundarios, ver *Qué falta*).
 - **Parte C — Preguntas Cortas:**
   - Respondidas en [ANSWERS.md](./ANSWERS.md) dentro del límite de 120 palabras por pregunta.
 
@@ -92,6 +92,7 @@ node kit/tools/make-cloud.js 1201-30001 2000000 --truncate
 ## Qué Falta y Qué Haría con un Día Más
 
 ### Qué falta (limitaciones conocidas)
+- **iPad parcial (controles < 44 px restantes e inputs de 14 px):** Cumplen `>= 44 px` el filtro de nivel, el inspector y el cierre del modal; siguen por debajo los botones del Navbar (`~22 px` / `32 px`), `Load point cloud` / `Cancel download` (`~34 px`), `Cancel` / `Submit` del modal (`~34 px`) y los inputs/selects (`~36 px` con fuente `14 px`). Tampoco se probó en un iPad físico.
 - **Rendimiento sin medir ni LOD/submuestreo:** No se midieron FPS formales con 2,000,000 de puntos ni en computador normal ni en iPad físico. No hay LOD ni submuestreo: se dibujan los 2 M de puntos completos.
 - **Pruebas unitarias en el Frontend:** Solo se ejecuta `tsc -b && vite build` y ESLint; las pruebas automáticas están en el Backend.
 - **Tailwind por CDN en `index.html`:** Útil para desarrollo rápido, pero requiere conexión a internet.
