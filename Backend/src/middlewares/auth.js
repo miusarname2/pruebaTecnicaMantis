@@ -18,5 +18,6 @@ export default (req, res, next) => {
   }
 
   req.user = user;
+  res.set('Vary', 'Authorization');
   next();
 };

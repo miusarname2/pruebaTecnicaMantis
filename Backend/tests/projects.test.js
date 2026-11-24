@@ -105,9 +105,10 @@ describe('Rule 6: ETag and conditional requests', () => {
     expect(res.headers.etag).toBeDefined();
   });
 
-  test('Cache-Control is private', async () => {
+  test('Cache-Control is private and Vary includes Authorization', async () => {
     const res = await request(app).get('/api/projects/1201-30001').set('Authorization', STAFF);
     expect(res.headers['cache-control']).toContain('private');
+    expect(res.headers.vary).toContain('Authorization');
   });
 
   test('If-None-Match with matching ETag → 304', async () => {
@@ -118,6 +119,17 @@ describe('Rule 6: ETag and conditional requests', () => {
       .get('/api/projects/1201-30001')
       .set('Authorization', STAFF)
       .set('If-None-Match', etag);
+    expect(second.status).toBe(304);
+  });
+
+  test('If-None-Match supports weak W/ prefix and ETag lists → 304', async () => {
+    const first = await request(app).get('/api/projects/1201-30001').set('Authorization', STAFF);
+    const etag = first.headers.etag;
+
+    const second = await request(app)
+      .get('/api/projects/1201-30001')
+      .set('Authorization', STAFF)
+      .set('If-None-Match', `"stale-tag", W/${etag}`);
     expect(second.status).toBe(304);
   });
 

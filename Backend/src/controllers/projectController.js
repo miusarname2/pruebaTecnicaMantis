@@ -1,9 +1,10 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import { pipeline } from 'node:stream';
 import * as projectModel from '../models/projectModel.js';
 import * as spaceModel from '../models/spaceModel.js';
 import { formatProjectList, formatProjectDetail } from '../utils/sanitize.js';
-import { generateETag } from '../utils/etag.js';
+import { generateETag, matchesIfNoneMatch } from '../utils/etag.js';
 import config from '../config/index.js';
 
 const notFound = (res, error) => res.status(404).json({ error });
@@ -38,9 +39,13 @@ export const detail = (req, res) => {
   const result = formatProjectDetail(project, req.user.role);
 
   const etag = generateETag(result);
-  res.set({ ETag: etag, 'Cache-Control': 'private, no-cache' });
+  res.set({
+    ETag: etag,
+    'Cache-Control': 'private, no-cache',
+    Vary: 'Authorization',
+  });
 
-  if (req.headers['if-none-match'] === etag) {
+  if (matchesIfNoneMatch(req.headers['if-none-match'], etag)) {
     return res.status(304).end();
   }
 
@@ -86,21 +91,31 @@ export const cloud = (req, res) => {
   });
 
   const rangeHeader = req.headers.range;
+  let readStream;
+
   if (!rangeHeader) {
     res.set('Content-Length', size);
-    fs.createReadStream(filePath).pipe(res);
-    return;
+    readStream = fs.createReadStream(filePath);
+  } else {
+    const range = parseRange(rangeHeader, size);
+    if (!range) {
+      return rangeNotSatisfiable(res, size);
+    }
+
+    const { start, end } = range;
+    res.status(206).set({
+      'Content-Range': `bytes ${start}-${end}/${size}`,
+      'Content-Length': end - start + 1,
+    });
+    readStream = fs.createReadStream(filePath, { start, end });
   }
 
-  const range = parseRange(rangeHeader, size);
-  if (!range) {
-    return rangeNotSatisfiable(res, size);
-  }
-
-  const { start, end } = range;
-  res.status(206).set({
-    'Content-Range': `bytes ${start}-${end}/${size}`,
-    'Content-Length': end - start + 1,
+  pipeline(readStream, res, (err) => {
+    if (err && err.code !== 'ERR_STREAM_PREMATURE_CLOSE') {
+      console.error('[CLOUD STREAM ERROR]', err);
+      if (!res.headersSent) {
+        res.status(500).json({ error: 'Error streaming point cloud' });
+      }
+    }
   });
-  fs.createReadStream(filePath, { start, end }).pipe(res);
 };
