@@ -1,0 +1,91 @@
+/* Site Viewer Studio Design System — Base and Utility Styles */
+
+* {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+}
+
+/* Material Symbols alignment */
+.material-symbols-outlined, .material-symbols-rounded, .material-symbols-sharp, .material-icons {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  line-height: 1 !important;
+  box-sizing: content-box;
+  overflow: hidden;
+  white-space: nowrap;
+  direction: ltr;
+  vertical-align: middle;
+  font-size: 20px;
+}
+
+/* CAD drafting grid background */
+.cad-grid {
+  background-size: 28px 28px;
+  background-image:
+    linear-gradient(to right, rgba(122, 119, 112, 0.14) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(122, 119, 112, 0.14) 1px, transparent 1px);
+}
+
+.dark .cad-grid {
+  background-image:
+    linear-gradient(to right, rgba(148, 144, 137, 0.12) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 144, 137, 0.12) 1px, transparent 1px);
+}
+
+/* Custom technical scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(122, 119, 112, 0.3);
+  border-radius: 3px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 144, 137, 0.3);
+}
+
+/* Touch targets >= 44px for iPad accessibility */
+button, select, input, a {
+  touch-action: manipulation;
+}
+
+/* Ensure no accidental horizontal scroll */
+body {
+  overflow-x: hidden;
+}
+
+/* Progress bar animation */
+@keyframes progressStripes {
+  from { background-position: 0 0; }
+  to { background-position: 24px 0; }
+}
+
+.progress-animated {
+  background-size: 24px 24px;
+  background-image: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.15) 25%,
+    transparent 25%,
+    transparent 50%,
+    rgba(255, 255, 255, 0.15) 50%,
+    rgba(255, 255, 255, 0.15) 75%,
+    transparent 75%,
+    transparent
+  );
+  animation: progressStripes 1s linear infinite;
+}
