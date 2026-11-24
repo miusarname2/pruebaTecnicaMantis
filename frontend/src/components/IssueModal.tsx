@@ -103,7 +103,7 @@ export const IssueModal: React.FC<IssueModalProps> = ({
             type="button"
             onClick={onClose}
             aria-label="Close modal"
-            className="text-light-outline dark:text-dark-outline hover:text-light-on-surface dark:hover:text-dark-on-surface"
+            className="min-w-[44px] min-h-[44px] -mr-2 inline-flex items-center justify-center rounded text-light-outline dark:text-dark-outline hover:text-light-on-surface dark:hover:text-dark-on-surface hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high transition-colors"
           >
             <span className="material-symbols-outlined" aria-hidden="true">close</span>
           </button>

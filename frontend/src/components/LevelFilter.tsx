@@ -27,7 +27,7 @@ export const LevelFilter: React.FC<LevelFilterProps> = ({
         <button
           type="button"
           onClick={() => onSelectLevel('ALL')}
-          className={`px-gutter-md py-gutter-xs rounded-sm font-label text-label-sm transition-colors duration-state-change ${
+          className={`min-h-[44px] px-gutter-md py-gutter-xs rounded-sm font-label text-label-sm transition-colors duration-state-change ${
             selectedLevel === 'ALL'
               ? 'bg-light-secondary dark:bg-dark-secondary text-light-on-secondary dark:text-dark-on-secondary font-semibold shadow-xs'
               : 'text-light-on-surface dark:text-dark-on-surface hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high'
@@ -43,7 +43,7 @@ export const LevelFilter: React.FC<LevelFilterProps> = ({
               key={lvl}
               type="button"
               onClick={() => onSelectLevel(lvl)}
-              className={`px-gutter-md py-gutter-xs rounded-sm font-label text-label-sm transition-colors duration-state-change ${
+              className={`min-h-[44px] px-gutter-md py-gutter-xs rounded-sm font-label text-label-sm transition-colors duration-state-change ${
                 isActive
                   ? 'bg-light-secondary dark:bg-dark-secondary text-light-on-secondary dark:text-dark-on-secondary font-semibold shadow-xs'
                   : 'text-light-on-surface dark:text-dark-on-surface hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high'
@@ -60,7 +60,7 @@ export const LevelFilter: React.FC<LevelFilterProps> = ({
         <button
           type="button"
           onClick={() => onToggleViewMode('massing')}
-          className={`inline-flex items-center gap-gutter-xs px-gutter-sm py-gutter-xs rounded-sm font-label text-label-sm transition-colors duration-state-change ${
+          className={`min-h-[44px] inline-flex items-center gap-gutter-xs px-gutter-sm py-gutter-xs rounded-sm font-label text-label-sm transition-colors duration-state-change ${
             viewMode === 'massing'
               ? 'bg-light-surface-container-high dark:bg-dark-surface-container-high text-light-on-surface dark:text-dark-on-surface font-semibold shadow-xs'
               : 'text-light-on-surface-variant dark:text-dark-on-surface-variant hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high'
@@ -72,7 +72,7 @@ export const LevelFilter: React.FC<LevelFilterProps> = ({
         <button
           type="button"
           onClick={() => onToggleViewMode('wireframe')}
-          className={`inline-flex items-center gap-gutter-xs px-gutter-sm py-gutter-xs rounded-sm font-label text-label-sm transition-colors duration-state-change ${
+          className={`min-h-[44px] inline-flex items-center gap-gutter-xs px-gutter-sm py-gutter-xs rounded-sm font-label text-label-sm transition-colors duration-state-change ${
             viewMode === 'wireframe'
               ? 'bg-light-surface-container-high dark:bg-dark-surface-container-high text-light-on-surface dark:text-dark-on-surface font-semibold shadow-xs'
               : 'text-light-on-surface-variant dark:text-dark-on-surface-variant hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high'

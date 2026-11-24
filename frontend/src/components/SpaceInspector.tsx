@@ -48,7 +48,7 @@ export const SpaceInspector: React.FC<SpaceInspectorProps> = ({
           type="button"
           onClick={onClose}
           aria-label="Clear selection"
-          className="text-light-outline dark:text-dark-outline hover:text-light-on-surface dark:hover:text-dark-on-surface"
+          className="min-w-[44px] min-h-[44px] -mr-2 inline-flex items-center justify-center rounded text-light-outline dark:text-dark-outline hover:text-light-on-surface dark:hover:text-dark-on-surface hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high transition-colors"
         >
           <span className="material-symbols-outlined text-base" aria-hidden="true">close</span>
         </button>
@@ -64,7 +64,7 @@ export const SpaceInspector: React.FC<SpaceInspectorProps> = ({
             <button
               type="button"
               onClick={onToggleUnit}
-              className="text-xs font-mono text-light-secondary dark:text-dark-secondary underline hover:opacity-80 cursor-pointer"
+              className="min-w-[44px] min-h-[44px] px-2 inline-flex items-center justify-center rounded text-xs font-mono text-light-secondary dark:text-dark-secondary underline hover:bg-light-surface-container-high dark:hover:bg-dark-surface-container-high cursor-pointer transition-colors"
               title="Toggle m² and ft²"
             >
               ({unit === 'm2' ? 'ft²' : 'm²'})
@@ -97,7 +97,7 @@ export const SpaceInspector: React.FC<SpaceInspectorProps> = ({
       <button
         type="button"
         onClick={() => onOpenReportIssue(space)}
-        className="w-full inline-flex items-center justify-center gap-gutter-sm px-gutter-md py-gutter-xs rounded bg-light-surface-container-lowest dark:bg-dark-surface-container-high text-light-primary dark:text-dark-primary border border-light-primary/30 dark:border-dark-primary/30 hover:bg-light-primary/10 transition-colors font-label text-label-sm"
+        className="w-full min-h-[44px] inline-flex items-center justify-center gap-gutter-sm px-gutter-md py-gutter-xs rounded bg-light-surface-container-lowest dark:bg-dark-surface-container-high text-light-primary dark:text-dark-primary border border-light-primary/30 dark:border-dark-primary/30 hover:bg-light-primary/10 transition-colors font-label text-label-sm"
       >
         <span className="material-symbols-outlined text-base" aria-hidden="true">flag</span>
         <span>Report issue in {space.name}</span>

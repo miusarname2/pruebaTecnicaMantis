@@ -54,10 +54,12 @@ export default function App() {
   // ── Issue Modal State ───────────────────────────────────────────────
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
 
-  // ── Three.js & Worker Refs ──────────────────────────────────────────
+  // ── Three.js, Worker & Request Refs ─────────────────────────────────
   const mountRef = useRef<HTMLDivElement>(null);
   const sceneRef = useRef<ViewerScene | null>(null);
   const workerRef = useRef<Worker | null>(null);
+  const projectAbortRef = useRef<AbortController | null>(null);
+  const projectRequestIdRef = useRef(0);
 
   // ── Theme Management ────────────────────────────────────────────────
   useEffect(() => {
@@ -105,6 +107,7 @@ export default function App() {
 
     return () => {
       resizeObserver.disconnect();
+      projectAbortRef.current?.abort();
       cancelCloudLoad();
       scene.dispose();
       sceneRef.current = null;
@@ -150,6 +153,11 @@ export default function App() {
 
   // ── Fetch project details & spaces whenever project changes ─────────
   const loadProjectData = useCallback(async (id: string, token: string) => {
+    projectAbortRef.current?.abort();
+    const controller = new AbortController();
+    projectAbortRef.current = controller;
+    const reqId = ++projectRequestIdRef.current;
+
     setIsLoadingDetails(true);
     setAppError(null);
     setSelectedSpace(null);
@@ -163,9 +171,12 @@ export default function App() {
 
     try {
       const [detail, spaceList] = await Promise.all([
-        api.getProjectDetail(id, token),
-        api.getSpaces(id, token),
+        api.getProjectDetail(id, token, controller.signal),
+        api.getSpaces(id, token, controller.signal),
       ]);
+
+      if (reqId !== projectRequestIdRef.current) return;
+
       setProjectDetail(detail);
       setSpaces(spaceList);
 
@@ -174,13 +185,18 @@ export default function App() {
         sceneRef.current.setViewMode(viewMode);
       }
     } catch (err: unknown) {
+      if ((err as Error)?.name === 'AbortError' || reqId !== projectRequestIdRef.current) {
+        return;
+      }
       const msg = err instanceof ApiError ? err.message : 'Error loading project data. Try again.';
       setAppError(msg);
       setProjectDetail(null);
       setSpaces([]);
       sceneRef.current?.clearSpaces();
     } finally {
-      setIsLoadingDetails(false);
+      if (reqId === projectRequestIdRef.current) {
+        setIsLoadingDetails(false);
+      }
     }
   }, [cancelCloudLoad, viewMode]);
 
@@ -235,7 +251,7 @@ export default function App() {
         setHasCloudLoaded(true);
         setCloudPointCount(data.pointCount);
 
-        sceneRef.current?.setPointCloud(data.positions, data.colors);
+        sceneRef.current?.setPointCloud(data.buckets);
 
         worker.terminate();
         workerRef.current = null;
@@ -255,7 +271,7 @@ export default function App() {
       workerRef.current = null;
     };
 
-    worker.postMessage({ url: cloudUrl, token: currentUser.token });
+    worker.postMessage({ url: cloudUrl, token: currentUser.token, spaces });
   };
 
   // ── Issue Submission ────────────────────────────────────────────────
@@ -265,6 +281,8 @@ export default function App() {
   };
 
   const handleLogout = () => {
+    projectAbortRef.current?.abort();
+    projectRequestIdRef.current++;
     cancelCloudLoad();
     sceneRef.current?.clearSpaces();
     sceneRef.current?.clearPointCloud();

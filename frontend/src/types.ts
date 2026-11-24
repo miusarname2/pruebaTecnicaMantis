@@ -64,11 +64,16 @@ export interface CloudProgressMessage {
   percent: number;
 }
 
+export interface CloudLevelBucket {
+  level: string;
+  positions: Float32Array;
+  colors: Uint8Array;
+}
+
 export interface CloudDoneMessage {
   type: 'done';
   pointCount: number;
-  positions: Float32Array;
-  colors: Uint8Array;
+  buckets: CloudLevelBucket[];
 }
 
 export interface CloudErrorMessage {

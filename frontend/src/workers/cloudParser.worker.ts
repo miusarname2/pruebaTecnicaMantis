@@ -1,8 +1,18 @@
-// Web Worker for downloading and parsing PTS1 binary point cloud files
+// Web Worker for downloading, parsing, and level-partitioning PTS1 binary point cloud files
 // Runs on a background thread so the 3D scene and UI remain completely fluid (60+ FPS)
 
-self.onmessage = async (e: MessageEvent<{ url: string; token: string }>) => {
-  const { url, token } = e.data;
+interface SpaceBoxInput {
+  level: string;
+  x: number;
+  y: number;
+  z: number;
+  w: number;
+  d: number;
+  h: number;
+}
+
+self.onmessage = async (e: MessageEvent<{ url: string; token: string; spaces?: SpaceBoxInput[] }>) => {
+  const { url, token, spaces = [] } = e.data;
 
   try {
     const response = await fetch(url, {
@@ -111,9 +121,6 @@ self.onmessage = async (e: MessageEvent<{ url: string; token: string }>) => {
     // Bytes 4..7: uint32 point count N
     const N = dataView.getUint32(4, true);
 
-    // Bytes 8..11: float32 point spacing in metres
-    // Bytes 12..15: uint32 reserved
-
     const expectedBytes = 16 + N * 16;
     if (loadedBytes < expectedBytes) {
       const actualPoints = Math.floor((loadedBytes - 16) / 16);
@@ -125,10 +132,36 @@ self.onmessage = async (e: MessageEvent<{ url: string; token: string }>) => {
       return;
     }
 
-    // ── Body parsing into typed arrays ───────────────────────────────
-    // Allocate positions (3 floats per point) and colors (3 uint8 per point)
-    const positions = new Float32Array(N * 3);
-    const colors = new Uint8Array(N * 3);
+    // ── Level classification setup (runs off the main thread) ────────
+    const spaceBoxes = spaces.map((s) => ({
+      level: s.level,
+      minX: s.x - 0.08,
+      maxX: s.x + s.w + 0.08,
+      minY: s.z - 0.05, // In Three.js, Y is kit z (height)
+      maxY: s.z + s.h + 0.05,
+      minZ: s.y - 0.08, // In Three.js, Z is kit y (depth)
+      maxZ: s.y + s.d + 0.08,
+    }));
+
+    const levels = Array.from(new Set(spaces.map((s) => s.level)));
+    if (levels.length === 0) levels.push('Default');
+
+    const levelMids: number[] = levels.map((lvl) => {
+      const boxes = spaceBoxes.filter((b) => b.level === lvl);
+      if (boxes.length === 0) return 0;
+      const minY = Math.min(...boxes.map((b) => b.minY));
+      const maxY = Math.max(...boxes.map((b) => b.maxY));
+      return (minY + maxY) / 2;
+    });
+
+    const levelIndexMap = new Map<string, number>();
+    levels.forEach((lvl, idx) => levelIndexMap.set(lvl, idx));
+
+    // Pass 1: parse coordinates, classify into level index, and count per level
+    const tempPositions = new Float32Array(N * 3);
+    const tempColors = new Uint8Array(N * 3);
+    const pointLevelIndices = new Uint8Array(N);
+    const levelCounts = new Int32Array(levels.length);
 
     for (let i = 0; i < N; i++) {
       const byteOffset = 16 + i * 16;
@@ -137,38 +170,93 @@ self.onmessage = async (e: MessageEvent<{ url: string; token: string }>) => {
       const y = dataView.getFloat32(byteOffset + 4, true);
       const z = dataView.getFloat32(byteOffset + 8, true);
 
-      const r = fullBuffer[byteOffset + 12];
-      const g = fullBuffer[byteOffset + 13];
-      const b = fullBuffer[byteOffset + 14];
-
       // Coordinate mapping to Three.js:
       // In kit: x = x, y = depth, z = height (Z up)
       // In Three.js: X = x, Y = z (up), Z = y (depth)
-      const pIndex = i * 3;
-      positions[pIndex] = x;
-      positions[pIndex + 1] = z;
-      positions[pIndex + 2] = y;
+      const px = x;
+      const py = z;
+      const pz = y;
 
-      const cIndex = i * 3;
-      colors[cIndex] = r;
-      colors[cIndex + 1] = g;
-      colors[cIndex + 2] = b;
+      const idx3 = i * 3;
+      tempPositions[idx3] = px;
+      tempPositions[idx3 + 1] = py;
+      tempPositions[idx3 + 2] = pz;
+
+      tempColors[idx3] = fullBuffer[byteOffset + 12];
+      tempColors[idx3 + 1] = fullBuffer[byteOffset + 13];
+      tempColors[idx3 + 2] = fullBuffer[byteOffset + 14];
+
+      let assignedIdx = -1;
+      for (let b = 0; b < spaceBoxes.length; b++) {
+        const box = spaceBoxes[b];
+        if (
+          px >= box.minX && px <= box.maxX &&
+          py >= box.minY && py <= box.maxY &&
+          pz >= box.minZ && pz <= box.maxZ
+        ) {
+          assignedIdx = levelIndexMap.get(box.level) ?? 0;
+          break;
+        }
+      }
+
+      if (assignedIdx === -1) {
+        let bestDist = Infinity;
+        assignedIdx = 0;
+        for (let l = 0; l < levels.length; l++) {
+          const dist = Math.abs(py - levelMids[l]);
+          if (dist < bestDist) {
+            bestDist = dist;
+            assignedIdx = l;
+          }
+        }
+      }
+
+      pointLevelIndices[i] = assignedIdx;
+      levelCounts[assignedIdx]++;
     }
 
-    // Zero-copy transfer of typed array memory to main thread
+    // Pass 2: pack into per-level typed arrays for zero-copy transfer
+    const buckets = levels.map((level, lIdx) => ({
+      level,
+      positions: new Float32Array(levelCounts[lIdx] * 3),
+      colors: new Uint8Array(levelCounts[lIdx] * 3),
+    }));
+    const levelOffsets = new Int32Array(levels.length);
+
+    for (let i = 0; i < N; i++) {
+      const lIdx = pointLevelIndices[i];
+      const offset3 = levelOffsets[lIdx];
+      const pIdx = i * 3;
+      const bucket = buckets[lIdx];
+
+      bucket.positions[offset3] = tempPositions[pIdx];
+      bucket.positions[offset3 + 1] = tempPositions[pIdx + 1];
+      bucket.positions[offset3 + 2] = tempPositions[pIdx + 2];
+
+      bucket.colors[offset3] = tempColors[pIdx];
+      bucket.colors[offset3 + 1] = tempColors[pIdx + 1];
+      bucket.colors[offset3 + 2] = tempColors[pIdx + 2];
+
+      levelOffsets[lIdx] += 3;
+    }
+
+    const transferables: Transferable[] = [];
+    for (const b of buckets) {
+      transferables.push(b.positions.buffer, b.colors.buffer);
+    }
+
+    // Zero-copy transfer of partitioned typed array memory to main thread
     (self as unknown as { postMessage: (msg: unknown, transfer: Transferable[]) => void }).postMessage(
       {
         type: 'done',
         pointCount: N,
-        positions,
-        colors,
+        buckets,
       },
-      [positions.buffer, colors.buffer]
+      transferables
     );
   } catch (err: unknown) {
     const error = err as Error;
     if (error.name === 'AbortError') {
-      // Aborted by user - don't send error
       return;
     }
     self.postMessage({

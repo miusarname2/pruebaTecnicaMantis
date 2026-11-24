@@ -27,7 +27,10 @@ async function request<T>(path: string, token: string, options: RequestInit = {}
       ...options,
       headers,
     });
-  } catch (_err) {
+  } catch (err: unknown) {
+    if ((err as Error)?.name === 'AbortError' || options.signal?.aborted) {
+      throw err;
+    }
     throw new ApiError('Network error. Check your connection to the server. Try again.', 0);
   }
 
@@ -60,12 +63,12 @@ export const api = {
     return request<ProjectSummary[]>('/projects', token);
   },
 
-  getProjectDetail(id: string, token: string): Promise<ProjectDetail> {
-    return request<ProjectDetail>(`/projects/${id}`, token);
+  getProjectDetail(id: string, token: string, signal?: AbortSignal): Promise<ProjectDetail> {
+    return request<ProjectDetail>(`/projects/${id}`, token, { signal });
   },
 
-  getSpaces(id: string, token: string): Promise<Space[]> {
-    return request<Space[]>(`/projects/${id}/spaces`, token);
+  getSpaces(id: string, token: string, signal?: AbortSignal): Promise<Space[]> {
+    return request<Space[]>(`/projects/${id}/spaces`, token, { signal });
   },
 
   createIssue(id: string, token: string, payload: IssuePayload): Promise<{ id: string }> {

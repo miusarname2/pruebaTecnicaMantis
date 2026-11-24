@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
-import type { Space } from '../types';
+import type { Space, CloudLevelBucket } from '../types';
 
 // Design System palette matching Site Viewer Studio
 const LEVEL_COLORS: Record<string, number> = {
@@ -38,7 +38,6 @@ export class ViewerScene {
   private spaceMeshes: THREE.Mesh[] = [];
   private selectedSpaceMesh: THREE.Mesh | null = null;
   private originalMaterials: Map<THREE.Mesh, THREE.MeshStandardMaterial> = new Map();
-  private currentSpaces: Space[] = [];
 
   // Point cloud management: partitioned per level for instant 60 FPS filtering
   private cloudGroup: THREE.Group = new THREE.Group();
@@ -235,7 +234,6 @@ export class ViewerScene {
   // ── Spaces Rendering ───────────────────────────────────────────────
   public setSpaces(spaces: Space[]) {
     this.clearSpaces();
-    this.currentSpaces = [...spaces];
 
     const bounds = new THREE.Box3();
 
@@ -327,127 +325,18 @@ export class ViewerScene {
     });
     this.spaceMeshes = [];
     this.originalMaterials.clear();
-    this.currentSpaces = [];
   }
 
-  // ── Point Cloud Partitioning & Rendering per Level ─────────────────
-  public setPointCloud(positions: Float32Array, colors: Uint8Array) {
+  // ── Point Cloud Rendering per Level (partitioned in Web Worker) ─────
+  public setPointCloud(buckets: CloudLevelBucket[]) {
     this.clearPointCloud();
 
-    const totalPoints = positions.length / 3;
-    if (totalPoints === 0) return;
+    buckets.forEach(({ level, positions, colors }) => {
+      if (positions.length === 0) return;
 
-    // 1. Determine bounding boxes for all current spaces to classify points by level
-    const spaceBoxes = this.currentSpaces.map((s) => ({
-      level: s.level,
-      minX: s.x - 0.08,
-      maxX: s.x + s.w + 0.08,
-      minY: s.z - 0.05, // In Three.js, Y is kit z (height)
-      maxY: s.z + s.h + 0.05,
-      minZ: s.y - 0.08, // In Three.js, Z is kit y (depth)
-      maxZ: s.y + s.d + 0.08,
-    }));
-
-    // Find unique levels in the project
-    const levels = Array.from(new Set(this.currentSpaces.map((s) => s.level)));
-    if (levels.length === 0) levels.push('Default');
-
-    // Compute Y midpoints per level for quick fallback
-    const levelMids: Record<string, number> = {};
-    levels.forEach((lvl) => {
-      const boxes = spaceBoxes.filter((b) => b.level === lvl);
-      if (boxes.length > 0) {
-        const minY = Math.min(...boxes.map((b) => b.minY));
-        const maxY = Math.max(...boxes.map((b) => b.maxY));
-        levelMids[lvl] = (minY + maxY) / 2;
-      } else {
-        levelMids[lvl] = 0;
-      }
-    });
-
-    // 2. Classify points into levels
-    // First pass: count points per level
-    const levelCounts: Record<string, number> = {};
-    levels.forEach((lvl) => { levelCounts[lvl] = 0; });
-    const pointLevelIndices = new Uint8Array(totalPoints);
-
-    const levelIndexMap: Record<string, number> = {};
-    levels.forEach((lvl, idx) => { levelIndexMap[lvl] = idx; });
-
-    for (let i = 0; i < totalPoints; i++) {
-      const px = positions[i * 3];
-      const py = positions[i * 3 + 1];
-      const pz = positions[i * 3 + 2];
-
-      let assignedLevel = '';
-
-      // Check space box match
-      for (let b = 0; b < spaceBoxes.length; b++) {
-        const box = spaceBoxes[b];
-        if (
-          px >= box.minX && px <= box.maxX &&
-          py >= box.minY && py <= box.maxY &&
-          pz >= box.minZ && pz <= box.maxZ
-        ) {
-          assignedLevel = box.level;
-          break;
-        }
-      }
-
-      // Fallback: match closest level by elevation
-      if (!assignedLevel) {
-        let bestDist = Infinity;
-        assignedLevel = levels[0];
-        for (let l = 0; l < levels.length; l++) {
-          const lvl = levels[l];
-          const dist = Math.abs(py - levelMids[lvl]);
-          if (dist < bestDist) {
-            bestDist = dist;
-            assignedLevel = lvl;
-          }
-        }
-      }
-
-      const lIdx = levelIndexMap[assignedLevel] || 0;
-      pointLevelIndices[i] = lIdx;
-      levelCounts[assignedLevel] = (levelCounts[assignedLevel] || 0) + 1;
-    }
-
-    // 3. Allocate separate buffers for each level
-    const levelPositions: Record<string, Float32Array> = {};
-    const levelColors: Record<string, Uint8Array> = {};
-    const levelOffsets: Record<string, number> = {};
-
-    levels.forEach((lvl) => {
-      const count = levelCounts[lvl] || 0;
-      levelPositions[lvl] = new Float32Array(count * 3);
-      levelColors[lvl] = new Uint8Array(count * 3);
-      levelOffsets[lvl] = 0;
-    });
-
-    // 4. Fill level buffers
-    for (let i = 0; i < totalPoints; i++) {
-      const lIdx = pointLevelIndices[i];
-      const lvl = levels[lIdx];
-      const offset = levelOffsets[lvl];
-
-      const pIdx = i * 3;
-      levelPositions[lvl][offset] = positions[pIdx];
-      levelPositions[lvl][offset + 1] = positions[pIdx + 1];
-      levelPositions[lvl][offset + 2] = positions[pIdx + 2];
-
-      levelColors[lvl][offset] = colors[pIdx];
-      levelColors[lvl][offset + 1] = colors[pIdx + 1];
-      levelColors[lvl][offset + 2] = colors[pIdx + 2];
-
-      levelOffsets[lvl] += 3;
-    }
-
-    // 5. Create a THREE.Points mesh per level and add to cloudGroup
-    levels.forEach((lvl) => {
       const geom = new THREE.BufferGeometry();
-      geom.setAttribute('position', new THREE.BufferAttribute(levelPositions[lvl], 3));
-      geom.setAttribute('color', new THREE.BufferAttribute(levelColors[lvl], 3, true));
+      geom.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+      geom.setAttribute('color', new THREE.BufferAttribute(colors, 3, true));
       geom.computeBoundingSphere();
 
       const mat = new THREE.PointsMaterial({
@@ -457,10 +346,10 @@ export class ViewerScene {
       });
 
       const mesh = new THREE.Points(geom, mat);
-      mesh.visible = (this.currentLevelFilter === 'ALL' || this.currentLevelFilter === lvl);
+      mesh.visible = (this.currentLevelFilter === 'ALL' || this.currentLevelFilter === level);
 
       this.cloudGroup.add(mesh);
-      this.levelCloudMeshes.set(lvl, mesh);
+      this.levelCloudMeshes.set(level, mesh);
     });
   }
 
