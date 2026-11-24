@@ -19,8 +19,8 @@ cd pruebaTecnicaMantis
 Instala todas las dependencias del proyecto (raíz, backend y frontend) y arranca ambos servicios de forma concurrente:
 
 ```bash
-# 1. Instalar dependencias completas (raíz, backend y frontend automáticamente):
-npm install
+# 1. Instalar dependencias de todos los módulos (Backend y Frontend):
+npm run setup
 
 # 2. Generar nubes de puntos de prueba mínimas (si no están generadas aún):
 npm run setup:clouds
