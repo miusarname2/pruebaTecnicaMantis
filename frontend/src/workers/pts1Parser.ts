@@ -81,30 +81,16 @@ export function parsePts1Buffer(fullBuffer: Uint8Array, spaces: SpaceBoxInput[] 
   const levelIndexMap = new Map<string, number>();
   levels.forEach((lvl, idx) => levelIndexMap.set(lvl, idx));
 
-  const tempPositions = new Float32Array(N * 3);
-  const tempColors = new Uint8Array(N * 3);
-  const pointLevelIndices = new Uint8Array(N);
+  const pointLevelIndices = levels.length > 255 ? new Uint16Array(N) : new Uint8Array(N);
   const levelCounts = new Int32Array(levels.length);
 
+  // Pass 1: classify each point into its level bucket without allocating temp position/color buffers
   for (let i = 0; i < N; i++) {
     const byteOffset = 16 + i * 16;
 
-    const x = dataView.getFloat32(byteOffset, true);
-    const y = dataView.getFloat32(byteOffset + 4, true);
-    const z = dataView.getFloat32(byteOffset + 8, true);
-
-    const px = x;
-    const py = z;
-    const pz = y;
-
-    const idx3 = i * 3;
-    tempPositions[idx3] = px;
-    tempPositions[idx3 + 1] = py;
-    tempPositions[idx3 + 2] = pz;
-
-    tempColors[idx3] = fullBuffer[byteOffset + 12];
-    tempColors[idx3 + 1] = fullBuffer[byteOffset + 13];
-    tempColors[idx3 + 2] = fullBuffer[byteOffset + 14];
+    const px = dataView.getFloat32(byteOffset, true);
+    const pz = dataView.getFloat32(byteOffset + 4, true); // In Three.js, Z is kit y (depth)
+    const py = dataView.getFloat32(byteOffset + 8, true); // In Three.js, Y is kit z (height)
 
     let assignedIdx = -1;
     for (let b = 0; b < spaceBoxes.length; b++) {
@@ -142,19 +128,20 @@ export function parsePts1Buffer(fullBuffer: Uint8Array, spaces: SpaceBoxInput[] 
   }));
   const levelOffsets = new Int32Array(levels.length);
 
+  // Pass 2: write positions and colors directly into the final per-level transferable buckets
   for (let i = 0; i < N; i++) {
+    const byteOffset = 16 + i * 16;
     const lIdx = pointLevelIndices[i];
     const offset3 = levelOffsets[lIdx];
-    const pIdx = i * 3;
     const bucket = buckets[lIdx];
 
-    bucket.positions[offset3] = tempPositions[pIdx];
-    bucket.positions[offset3 + 1] = tempPositions[pIdx + 1];
-    bucket.positions[offset3 + 2] = tempPositions[pIdx + 2];
+    bucket.positions[offset3] = dataView.getFloat32(byteOffset, true);
+    bucket.positions[offset3 + 1] = dataView.getFloat32(byteOffset + 8, true);
+    bucket.positions[offset3 + 2] = dataView.getFloat32(byteOffset + 4, true);
 
-    bucket.colors[offset3] = tempColors[pIdx];
-    bucket.colors[offset3 + 1] = tempColors[pIdx + 1];
-    bucket.colors[offset3 + 2] = tempColors[pIdx + 2];
+    bucket.colors[offset3] = fullBuffer[byteOffset + 12];
+    bucket.colors[offset3 + 1] = fullBuffer[byteOffset + 13];
+    bucket.colors[offset3 + 2] = fullBuffer[byteOffset + 14];
 
     levelOffsets[lIdx] += 3;
   }

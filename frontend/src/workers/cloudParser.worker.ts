@@ -46,6 +46,7 @@ self.onmessage = async (e: MessageEvent<{ url: string; token: string; spaces?: S
     const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
 
     const reader = response.body.getReader();
+    let preallocatedBuffer: Uint8Array | null = totalBytes > 0 ? new Uint8Array(totalBytes) : null;
     const chunks: Uint8Array[] = [];
     let loadedBytes = 0;
     let lastProgressTime = 0;
@@ -55,7 +56,17 @@ self.onmessage = async (e: MessageEvent<{ url: string; token: string; spaces?: S
       if (done) break;
 
       if (value) {
-        chunks.push(value);
+        if (preallocatedBuffer && loadedBytes + value.byteLength <= preallocatedBuffer.byteLength) {
+          preallocatedBuffer.set(value, loadedBytes);
+        } else {
+          if (preallocatedBuffer) {
+            if (loadedBytes > 0) {
+              chunks.push(preallocatedBuffer.slice(0, loadedBytes));
+            }
+            preallocatedBuffer = null;
+          }
+          chunks.push(value);
+        }
         loadedBytes += value.byteLength;
 
         const now = performance.now();
@@ -72,11 +83,19 @@ self.onmessage = async (e: MessageEvent<{ url: string; token: string; spaces?: S
       }
     }
 
-    const fullBuffer = new Uint8Array(loadedBytes);
-    let offset = 0;
-    for (const chunk of chunks) {
-      fullBuffer.set(chunk, offset);
-      offset += chunk.byteLength;
+    let fullBuffer: Uint8Array;
+    if (preallocatedBuffer) {
+      fullBuffer = loadedBytes === preallocatedBuffer.byteLength
+        ? preallocatedBuffer
+        : preallocatedBuffer.subarray(0, loadedBytes);
+    } else {
+      fullBuffer = new Uint8Array(loadedBytes);
+      let offset = 0;
+      for (const chunk of chunks) {
+        fullBuffer.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+      chunks.length = 0;
     }
 
     const result = parsePts1Buffer(fullBuffer, spaces);
