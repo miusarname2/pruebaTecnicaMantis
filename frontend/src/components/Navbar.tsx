@@ -3,6 +3,8 @@ import type { User, ProjectSummary } from '../types';
 
 interface NavbarProps {
   currentUser: User;
+  users?: User[];
+  onSelectUser?: (user: User) => void;
   onLogout: () => void;
   projects: ProjectSummary[];
   selectedProjectId: string | null;
@@ -14,6 +16,8 @@ interface NavbarProps {
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
+  users,
+  onSelectUser,
   onLogout,
   projects,
   selectedProjectId,
@@ -102,18 +106,41 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         </div>
 
-        {/* User / Role Badge */}
-        <div className="flex items-center gap-gutter-sm px-gutter-md py-gutter-xs rounded bg-light-surface-container-low dark:bg-dark-surface-container border border-light-outline-variant dark:border-dark-outline-variant">
-          <span className="w-6 h-6 rounded-sm bg-light-secondary dark:bg-dark-secondary text-light-on-secondary dark:text-dark-on-secondary font-mono text-mono-sm flex items-center justify-center font-bold text-xs">
-            {initials}
-          </span>
-          <span className="font-body text-body-sm text-light-on-surface dark:text-dark-on-surface font-medium hidden sm:inline">
-            {currentUser.name}
-          </span>
-          <span className="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant text-xs">
-            {currentUser.role.toUpperCase()}
-          </span>
-        </div>
+        {/* Token / User Selector */}
+        {users && users.length > 0 && onSelectUser ? (
+          <label className="flex items-center gap-gutter-xs">
+            <span className="font-label text-label-sm text-light-on-surface-variant dark:text-dark-on-surface-variant uppercase hidden xl:inline">
+              Token
+            </span>
+            <select
+              aria-label="Select user token"
+              value={currentUser.token}
+              onChange={(e) => {
+                const next = users.find((u) => u.token === e.target.value);
+                if (next) onSelectUser(next);
+              }}
+              className="min-h-[44px] rounded bg-light-surface-container-low dark:bg-dark-surface-container text-light-on-surface dark:text-dark-on-surface border border-light-outline-variant dark:border-dark-outline-variant font-body text-base py-gutter-xs pl-gutter-md pr-8 focus:outline-none focus:border-light-primary dark:focus:border-dark-primary focus:ring-1 focus:ring-light-primary dark:focus:ring-dark-primary cursor-pointer transition-colors duration-state-change"
+            >
+              {users.map((u) => (
+                <option key={u.token} value={u.token}>
+                  {u.name} · {u.role.toUpperCase()}{u.account ? ` (${u.account})` : ''}
+                </option>
+              ))}
+            </select>
+          </label>
+        ) : (
+          <div className="flex items-center gap-gutter-sm px-gutter-md py-gutter-xs rounded bg-light-surface-container-low dark:bg-dark-surface-container border border-light-outline-variant dark:border-dark-outline-variant">
+            <span className="w-6 h-6 rounded-sm bg-light-secondary dark:bg-dark-secondary text-light-on-secondary dark:text-dark-on-secondary font-mono text-mono-sm flex items-center justify-center font-bold text-xs">
+              {initials}
+            </span>
+            <span className="font-body text-body-sm text-light-on-surface dark:text-dark-on-surface font-medium hidden sm:inline">
+              {currentUser.name}
+            </span>
+            <span className="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant text-xs">
+              {currentUser.role.toUpperCase()}
+            </span>
+          </div>
+        )}
 
         {/* Sign Out Button */}
         <button
