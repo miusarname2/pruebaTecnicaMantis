@@ -18,7 +18,7 @@ const USERS: User[] = [
 
 export default function App() {
   // ── Authentication & Theme ──────────────────────────────────────────
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [currentUser, setCurrentUser] = useState<User | null>(USERS[0]);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
     try {
       return localStorage.getItem('sv-theme') === 'dark';
@@ -50,6 +50,12 @@ export default function App() {
   const [cloudTotalMB, setCloudTotalMB] = useState('0.0');
   const [cloudPointCount, setCloudPointCount] = useState<number | null>(null);
   const [cloudError, setCloudError] = useState<string | null>(null);
+  const [perfStats, setPerfStats] = useState<{
+    fps: number;
+    renderedPoints: number;
+    totalPoints: number;
+    lodRatio: number;
+  }>({ fps: 60, renderedPoints: 0, totalPoints: 0, lodRatio: 1 });
 
   // ── Issue Modal State ───────────────────────────────────────────────
   const [isIssueModalOpen, setIsIssueModalOpen] = useState(false);
@@ -60,9 +66,12 @@ export default function App() {
   const workerRef = useRef<Worker | null>(null);
   const projectAbortRef = useRef<AbortController | null>(null);
   const projectRequestIdRef = useRef(0);
+  const isDarkModeRef = useRef(isDarkMode);
+  const viewModeRef = useRef(viewMode);
 
   // ── Theme Management ────────────────────────────────────────────────
   useEffect(() => {
+    isDarkModeRef.current = isDarkMode;
     const html = document.documentElement;
     if (isDarkMode) {
       html.classList.add('dark');
@@ -71,7 +80,9 @@ export default function App() {
     }
     try {
       localStorage.setItem('sv-theme', isDarkMode ? 'dark' : 'light');
-    } catch {}
+    } catch {
+      // ignore storage errors
+    }
     sceneRef.current?.setTheme(isDarkMode);
   }, [isDarkMode]);
 
@@ -93,11 +104,17 @@ export default function App() {
   useEffect(() => {
     if (!currentUser || !mountRef.current) return;
 
-    const scene = new ViewerScene(mountRef.current, (space) => {
-      setSelectedSpace(space);
-    });
-    scene.setTheme(isDarkMode);
-    scene.setViewMode(viewMode);
+    const scene = new ViewerScene(
+      mountRef.current,
+      (space) => {
+        setSelectedSpace(space);
+      },
+      (stats) => {
+        setPerfStats(stats);
+      }
+    );
+    scene.setTheme(isDarkModeRef.current);
+    scene.setViewMode(viewModeRef.current);
     sceneRef.current = scene;
 
     const resizeObserver = new ResizeObserver(() => {
@@ -146,9 +163,16 @@ export default function App() {
   }, [cancelCloudLoad]);
 
   useEffect(() => {
-    if (currentUser) {
-      loadProjects(currentUser);
-    }
+    if (!currentUser) return;
+    let cancelled = false;
+    Promise.resolve().then(() => {
+      if (!cancelled) {
+        void loadProjects(currentUser);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [currentUser, loadProjects]);
 
   // ── Fetch project details & spaces whenever project changes ─────────
@@ -182,7 +206,7 @@ export default function App() {
 
       if (sceneRef.current) {
         sceneRef.current.setSpaces(spaceList);
-        sceneRef.current.setViewMode(viewMode);
+        sceneRef.current.setViewMode(viewModeRef.current);
       }
     } catch (err: unknown) {
       if ((err as Error)?.name === 'AbortError' || reqId !== projectRequestIdRef.current) {
@@ -198,12 +222,21 @@ export default function App() {
         setIsLoadingDetails(false);
       }
     }
-  }, [cancelCloudLoad, viewMode]);
+  }, [cancelCloudLoad]);
 
   useEffect(() => {
-    if (selectedProjectId && currentUser) {
-      loadProjectData(selectedProjectId, currentUser.token);
-    }
+    if (!selectedProjectId || !currentUser) return;
+    let cancelled = false;
+    const projectId = selectedProjectId;
+    const token = currentUser.token;
+    Promise.resolve().then(() => {
+      if (!cancelled) {
+        void loadProjectData(projectId, token);
+      }
+    });
+    return () => {
+      cancelled = true;
+    };
   }, [selectedProjectId, currentUser, loadProjectData]);
 
   // ── Level & ViewMode Toggles ────────────────────────────────────────
@@ -213,6 +246,7 @@ export default function App() {
   };
 
   const handleToggleViewMode = (mode: 'massing' | 'wireframe') => {
+    viewModeRef.current = mode;
     setViewMode(mode);
     sceneRef.current?.setViewMode(mode);
   };
@@ -314,6 +348,14 @@ export default function App() {
       {/* Top Utility Header */}
       <Navbar
         currentUser={currentUser}
+        users={USERS}
+        onSelectUser={(user) => {
+          setSelectedProjectId(null);
+          setProjectDetail(null);
+          setSpaces([]);
+          setSelectedSpace(null);
+          setCurrentUser(user);
+        }}
         onLogout={handleLogout}
         projects={projects}
         selectedProjectId={selectedProjectId}
@@ -358,6 +400,19 @@ export default function App() {
             </div>
 
             <div className="inline-flex items-center gap-gutter-md px-gutter-md py-gutter-xs rounded bg-light-surface-container-lowest/90 dark:bg-dark-surface-container-low/90 backdrop-blur-xs border border-light-outline-variant dark:border-dark-outline-variant shadow-xs">
+              <span className="font-mono text-mono-sm text-light-on-surface dark:text-dark-on-surface tabular-nums text-xs">
+                {perfStats.fps} FPS
+              </span>
+              {perfStats.totalPoints > 0 && (
+                <>
+                  <span className="text-light-outline-variant dark:text-dark-outline-variant">|</span>
+                  <span className="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant tabular-nums text-xs">
+                    {perfStats.renderedPoints.toLocaleString()} / {perfStats.totalPoints.toLocaleString()} pts
+                    {perfStats.lodRatio < 1 ? ` (LOD ${Math.round(perfStats.lodRatio * 100)}%)` : ''}
+                  </span>
+                </>
+              )}
+              <span className="text-light-outline-variant dark:text-dark-outline-variant">|</span>
               <div className="flex items-center gap-gutter-xs">
                 <span className="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant tabular-nums text-xs">0</span>
                 <span className="w-10 h-0.5 bg-light-on-surface dark:bg-dark-on-surface"></span>
@@ -385,7 +440,7 @@ export default function App() {
                       loadProjects(currentUser);
                     }
                   }}
-                  className="self-start text-xs font-mono underline font-bold"
+                  className="self-start min-h-[44px] inline-flex items-center px-gutter-md py-gutter-xs rounded bg-light-error dark:bg-dark-error text-white font-label text-label-sm hover:opacity-90 transition-opacity"
                 >
                   Try again
                 </button>
@@ -446,8 +501,9 @@ export default function App() {
       </div>
 
       {/* Issue Modal */}
-      {projectDetail && (
+      {projectDetail && isIssueModalOpen && (
         <IssueModal
+          key={`${projectDetail.id}-${selectedSpace?.id ?? 'none'}`}
           isOpen={isIssueModalOpen}
           levels={projectDetail.levels}
           spaces={spaces}
