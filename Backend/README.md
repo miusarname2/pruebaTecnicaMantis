@@ -17,7 +17,7 @@ npm install && npm start      # http://localhost:3000
 | `npm start` | Servidor (`node index.js`) |
 | `npm run dev` | Servidor con auto-reload (`node --watch`) |
 | `npm run setup:clouds` | Genera las dos nubes del kit en `kit/data/clouds/` (2 M y 400 k puntos) |
-| `npm test` | Jest + Supertest (45 pruebas) |
+| `npm test` | Jest + Supertest (48 pruebas) |
 
 - **Puerto:** `PORT` (por defecto `3000`; el proxy de Vite del frontend apunta a `3000`).
 - **Nubes de puntos:** `GET /api/projects/:id/cloud` responde 404 si el `.pts` no
@@ -67,7 +67,7 @@ Un cliente que escribe en un proyecto ajeno recibe 404 antes de que se valide su
 
 ## Límites conocidos
 
-- **Range:** se aceptan `bytes=a-b` y `bytes=a-`. No hay rangos de sufijo (`bytes=-N`) ni múltiples; un rango fuera del archivo responde 416 en lugar de recortarse.
+- **Range:** se aceptan `bytes=a-b` (recortando `b` al tamaño del archivo), `bytes=a-` y rangos de sufijo (`bytes=-N`); no se soportan rangos múltiples (`bytes=a-b,c-d`). Un rango inválido o fuera del archivo responde `416`.
 - **Reportes:** viven en memoria (se pierden al reiniciar) y no hay endpoint para listarlos.
 - **CORS** abierto a cualquier origen (`cors()` sin opciones). La autenticación es por cabecera, no por cookie.
 - Sin límite de peticiones (rate limiting) ni logs estructurados.
@@ -84,13 +84,13 @@ Un cliente que escribe en un proyecto ajeno recibe 404 antes de que se valide su
 npm test
 ```
 
-Jest + Supertest sobre ES Modules nativos (`--experimental-vm-modules`). 45 pruebas en 3 archivos:
+Jest + Supertest sobre ES Modules nativos (`--experimental-vm-modules`). 48 pruebas en 3 archivos:
 
 | Archivo | Pruebas | Cubre |
 | :--- | :-: | :--- |
 | `tests/auth.test.js` | 6 | Regla 1: sin token, token inválido, sin prefijo `Bearer`, valor vacío, token válido staff y client |
 | `tests/issues.test.js` | 14 | Regla 5 y creación: título vacío/solo espacios/121 y 120 caracteres, nivel faltante o inexistente, `spaceId` inválido o numérico, JSON roto, proyecto ajeno → 404 |
-| `tests/projects.test.js` | 25 | Reglas 2, 3, 4, 6 (ETag, `Vary: Authorization`, listas/`W/`) y 7, ID mal formado y path traversal, y filtrado de la lista por rol |
+| `tests/projects.test.js` | 28 | Reglas 2, 3, 4, 6 (ETag, `Cache-Control: private`, `Vary: Authorization`, listas/`W/`) y 7 (`Range` sufijo, recortado y `416`), ID mal formado y path traversal, y filtrado de la lista por rol |
 
 La regla 4 se prueba comparando status y cuerpo de "ajeno" frente a "inexistente".
 
