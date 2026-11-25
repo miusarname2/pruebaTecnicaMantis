@@ -25,7 +25,7 @@ Este único comando ejecuta en orden:
 npm test
 ```
 
-Ejecuta las **55 pruebas automatizadas** del proyecto (45 de la API en Jest + Supertest y 10 del Frontend en Vitest).
+Ejecuta las **62 pruebas automatizadas** del proyecto (48 de la API en Jest + Supertest y 14 del Frontend en Vitest).
 
 ### Generación Manual de Nubes de Puntos (Opcional)
 
@@ -65,17 +65,19 @@ node kit/tools/make-cloud.js 1201-30001 2000000 --truncate
   - Aislamiento multi-cliente: un proyecto ajeno responde `404 { "error": "Project not found" }`, idéntico byte a byte a uno inexistente.
   - Validación estricta de IDs (`NNNN-NNNNN`), JSON roto (400), título de 1–120 caracteres, nivel y `spaceId` válidos (siempre 4xx, nunca 500).
   - Revalidación en `GET /api/projects/:id`: ETag MD5 fuerte (`"<hash>"`) con `Cache-Control: private, no-cache`, `Vary: Authorization` y soporte en `If-None-Match` para listas, `*` y prefijo débil `W/`.
-  - Streaming binario de nubes PTS1 con soporte `Range` (`206 Partial Content`) usando `stream.pipeline` para cerrar el descriptor de archivo si el cliente aborta la descarga.
-  - **45 pruebas automatizadas** en Jest + Supertest cubriendo todas las reglas.
+  - Streaming binario de nubes PTS1 con soporte `Range` conforme a RFC 9110 (`206 Partial Content`, recorte de fin `0-999999999` y rangos sufijo `bytes=-16`) usando `stream.pipeline` para cerrar el descriptor de archivo si el cliente aborta la descarga.
+  - Cabeceras `Cache-Control: private, no-cache` y `Vary: Authorization` en todos los endpoints autenticados (lista, detalle, espacios y nube).
+  - **48 pruebas automatizadas** en Jest + Supertest cubriendo todas las reglas.
 - **Parte B — Visor Web 3D (React 19 + TypeScript + Three.js):**
-  - Interfaz en inglés, selector de usuario/proyecto, ficha de proyecto con *"Not recorded"* para fechas nulas.
+  - Interfaz en inglés con **selector de token** directamente en la barra superior (`Navbar`) para alternar entre `staff-token`, `acme-token` y `brick-token` sin pasar por pantalla de login (conservando `LoginView` al cerrar sesión por retrocompatibilidad), selector de proyecto y ficha con *"Not recorded"* para fechas nulas.
   - Escena 3D con conversión $Z$-up a $Y$-up, raycast en cuartos, inspector lateral con cambio $\text{m}^2 \leftrightarrow \text{ft}^2$ y filtro por nivel.
-  - Web Worker dedicado ([frontend/src/workers/cloudParser.worker.ts](./frontend/src/workers/cloudParser.worker.ts)) que descarga, valida el encabezado PTS1, clasifica los puntos por nivel fuera del hilo principal y transfiere los buffers `Float32Array`/`Uint8Array` sin copiar memoria (`Transferable`).
+  - **LOD adaptativo y medición de FPS en tiempo real:** `ViewerScene` mide FPS cada 500 ms (visible en la barra inferior del visor) y aplica submuestreo sin copia mediante `BufferGeometry.setDrawRange` en nubes > 350,000 puntos: durante gestos de órbita/zoom/paneo dibuja el **25 %** de los puntos (500K de 2M) con tamaño aumentado (`2.2 px`) para mantener fluidez, y restaura el **100 %** (`1.5 px`) tras 180 ms al soltar. Si los FPS caen por debajo de 24, reduce progresivamente el porcentaje hasta 25 % y lo recupera al volver a $\ge 50$ FPS en reposo.
+  - **Web Worker en streaming y barajado uniforme:** [frontend/src/workers/cloudParser.worker.ts](./frontend/src/workers/cloudParser.worker.ts) usa `Pts1StreamParser` para parsear los trozos de red conforme llegan (sin acumular el archivo completo en RAM), aplica muestreo por zancada (*stride*) automático si el escaneo supera `4,000,000` puntos (protegiendo pestañas en archivos de ~300 MB), baraja determinísticamente cada nivel (Fisher-Yates *in-place*) para que el LOD por `setDrawRange` sea espacialmente uniforme incluso en escaneos ordenados, y transfiere los buffers con `Transferable` sin copiar memoria.
   - Cancelación segura al cambiar de proyecto (`worker.terminate()` para la nube + `AbortController` y control de versión de petición para detalle/espacios).
-  - Errores honestos con botón *"Try again"* y modal de reporte de issues sin `alert()`/`prompt()`.
+  - Errores honestos con botón *"Try again"* (`>= 44 px`) y modal de reporte de issues sin `alert()`/`prompt()`.
   - Controles táctiles `>= 44 px` en toda la interfaz, inputs/selects de `16 px` para evitar zoom en Safari, layout sin scroll horizontal y `OrbitControls` multitáctil para iPad.
   - Build 100% offline con Tailwind CSS v4 (`@tailwindcss/vite`), `@fontsource` y `material-symbols` empaquetados localmente (sin CDN).
-  - **10 pruebas unitarias en Vitest** cubriendo `parsePts1Buffer` (Z-up→Y-up, niveles, `N=0`, truncado, magic inválido) y `api/client` (Bearer, 401, errores JSON, red caída y `AbortError`).
+  - **14 pruebas unitarias en Vitest** cubriendo `parsePts1Buffer`, `Pts1StreamParser` (streaming en trozos partidos, fail-fast, submuestreo), `shuffleBuckets` y `api/client`.
 - **Parte C — Preguntas Cortas:**
   - Respondidas en [ANSWERS.md](./ANSWERS.md) dentro del límite de 120 palabras por pregunta.
 
@@ -94,13 +96,12 @@ node kit/tools/make-cloud.js 1201-30001 2000000 --truncate
 ## Qué Falta y Qué Haría con un Día Más
 
 ### Qué falta (limitaciones conocidas)
-- **Rendimiento sin medir ni LOD/submuestreo:** No se midieron FPS formales con 2,000,000 de puntos ni en computador normal ni en iPad físico. No hay LOD ni submuestreo: se dibujan los 2 M de puntos completos.
-- **Prueba en iPad físico:** Todos los controles cumplen `>= 44 px` e inputs `16 px` en el DOM, pero falta validación manual en hardware real.
+- **Prueba en iPad físico:** Todos los controles cumplen `>= 44 px` e inputs `16 px` en el DOM y la escena incluye LOD adaptativo + parseo en streaming, pero falta validación manual de FPS/memoria en un iPad físico real.
 - **Persistencia de issues:** Los reportes se guardan en memoria (se pierden al reiniciar el servidor).
 
 ### Qué haría con un día más
-1. Medir FPS y memoria en un iPad real e implementar submuestreo adaptativo (`setDrawRange`) durante gestos de órbita para mantener 60 FPS fluidos.
-2. Parsear y transferir la nube por trozos (*streaming parsing*) para reducir el pico de RAM en archivos >100 MB.
+1. Validar FPS y consumo real de RAM en un iPad físico con escaneos de 2 M y 300 MB.
+2. Agregar LOD espacial por octree con *frustum culling* si escaneos aún mayores lo requieren.
 3. Agregar pruebas de integración UI con Testing Library y persistir los issues en disco.
 
 ---

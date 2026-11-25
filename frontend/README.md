@@ -2,7 +2,7 @@
 
 Visor web 3D para gemelos digitales de edificios: muestra los espacios de un proyecto como cajas, carga la nube de puntos del escaneo (PTS1) en un Web Worker y permite reportar un problema. Consume la API de `../Backend`.
 
-**Estado en una línea:** los 7 puntos de la Parte B están implementados, el build es 100% offline (Tailwind CSS v4 y fuentes locales, sin CDN), incluye 10 pruebas unitarias en Vitest y todos los controles cumplen `>= 44 px` / `16 px` en inputs. Lo que aún falta verificar está en [Limitaciones conocidas](#limitaciones-conocidas).
+**Estado en una línea:** los 7 puntos de la Parte B están implementados, el build es 100% offline (Tailwind CSS v4 y fuentes locales, sin CDN), incluye 14 pruebas unitarias en Vitest, parseo en streaming en el worker, barajado Fisher-Yates para LOD uniforme por `setDrawRange` con medición de FPS en vivo, y todos los controles cumplen `>= 44 px` / `16 px` en inputs. Lo que aún falta verificar está en [Limitaciones conocidas](#limitaciones-conocidas).
 
 ## Arrancar
 
@@ -16,7 +16,7 @@ cd Backend && npm install && npm run dev
 cd frontend && npm install && npm run dev      # http://localhost:5173
 ```
 
-Otros scripts: `npm test` (Vitest, 10 pruebas), `npm run build` (tsc + vite), `npm run preview`, `npm run lint`.
+Otros scripts: `npm test` (Vitest, 14 pruebas), `npm run build` (tsc + vite), `npm run preview`, `npm run lint`.
 
 Las nubes del kit se generan con `node kit/tools/make-cloud.js 1201-30001` (2 M de puntos, ~30 MB) y `... 1201-30002 400000`. Agrega `--truncate` para probar el archivo cortado.
 
@@ -36,9 +36,9 @@ La pantalla de entrada tiene un campo de nombre y tres chips; cada uno usa el to
 
 | # | Requisito | Estado | Cómo está resuelto |
 |---|---|---|---|
-| 1 | Usuario, lista y ficha | Hecho | Chips de usuario, selector de proyecto en la barra superior, ficha con cliente, estado y fechas. Fecha vacía → "Not recorded". |
+| 1 | Usuario, lista y ficha | Hecho | Selector de token/usuario en la barra superior (`Navbar`, con `LoginView` al cerrar sesión), selector de proyecto y ficha con cliente, estado y fechas. Fecha vacía → "Not recorded". |
 | 2 | Espacios en 3D | Hecho | Una caja por espacio, color por nivel, `OrbitControls` con mouse y dedos. Al tocar una caja (raycast, ignora arrastres > 6 px) el panel muestra nombre, uso, nivel y área (ancho × fondo) con botón m² / ft². Filtro por nivel. |
-| 3 | Nube de puntos | Hecho | "Load point cloud" → worker descarga con `fetch` + stream, progreso real en MB y %, "Cancel download". Se dibuja con `THREE.Points` alineada con las cajas. |
+| 3 | Nube de puntos | Hecho | "Load point cloud" → worker descarga y parsea en streaming (`Pts1StreamParser`) con progreso real en MB y %, "Cancel download". Se dibuja con `THREE.Points` con LOD dinámico (`setDrawRange` al 25 % durante órbita y adaptativo por FPS). |
 | 4 | Cambiar de proyecto a mitad de carga | Hecho | Al cambiar de proyecto se hace `worker.terminate()` (corta la descarga) y se limpia la nube antes de pedir el nuevo proyecto. |
 | 5 | Errores honestos | Hecho | 404, 401, red caída, magic inválido y archivo truncado muestran un mensaje claro y "Try again". El truncado se detecta comparando el conteo del encabezado con los bytes recibidos. |
 | 6 | Reportar problema | Hecho | Modal propio (sin `alert`/`prompt`), título 1–120 con contador, nivel, espacio opcional preseleccionado; muestra éxito o error del POST. |
@@ -53,12 +53,13 @@ Detalles de comportamiento:
 ## Cómo viaja la nube de puntos
 
 ```
-fetch (en el worker) → trozos en memoria → un Uint8Array → valida PTS1 y N
-  → clasifica por nivel en el worker → buckets { level, Float32Array, Uint8Array }
+fetch (en el worker) → Pts1StreamParser (trozo a trozo, sin archivo completo en RAM)
+  → valida PTS1 y N (submuestreo por zancada si > 4 M pts) → bloques por nivel
+  → compacta en { level, Float32Array, Uint8Array } + barajado Fisher-Yates in-place
   → postMessage con transferencia zero-copy → hilo principal: un THREE.Points por nivel
 ```
 
-El `postMessage` final transfiere los buffers de cada nivel sin copiarlos. La descarga inicial en el worker aún acumula los trozos en un `Uint8Array` antes de parsear (ver limitaciones).
+El `postMessage` final transfiere los buffers de cada nivel sin copiarlos. Al barajar los puntos en el worker, el LOD por `setDrawRange` (25 % al orbitar y 100 % al soltar, o adaptativo si FPS < 24) siempre muestra una muestra uniforme de todo el edificio aunque el escaneo original esté ordenado espacialmente.
 
 ## Decisiones
 
@@ -72,15 +73,13 @@ El `postMessage` final transfiere los buffers de cada nivel sin copiarlos. La de
 
 Ordenadas por importancia.
 
-1. **Rendimiento sin medir ni LOD/submuestreo.** No se midieron FPS con 2 M de puntos en un computador normal ni en un iPad físico. No hay LOD, culling ni submuestreo: se dibujan los 2 M de puntos completos (tamaño fijo de 1,5 px, antialias activo, `pixelRatio` limitado a 2) y el bucle de render corre siempre.
-2. **Sin prueba en iPad físico.** Todos los controles cumplen `>= 44 px` e inputs `16 px` en CSS/DOM, pero no se validó manualmente en un iPad real con Safari.
-3. **Picos de memoria en el worker.** Durante la descarga coexisten los trozos descargados y el buffer unido antes de particionar por nivel. Con 30 MB es aceptable; con 300 MB en iPad puede provocar recarga de pestaña por memoria.
-4. **Textos decorativos de la pantalla de entrada** ("IFC4 · E57 Compatible", "0.02m · 2.0M PTS") son estáticos: el visor solo lee PTS1 y no importa IFC ni E57.
+1. **Sin prueba en iPad físico.** Todos los controles cumplen `>= 44 px` e inputs `16 px` en CSS/DOM, y se implementó LOD adaptativo + parseo en streaming + barajado uniforme, pero falta validación manual en un iPad real con Safari.
+2. **Textos decorativos de la pantalla de entrada** ("IFC4 · E57 Compatible", "0.02m · 2.0M PTS") son estáticos: el visor solo lee PTS1 y no importa IFC ni E57.
 
 ## Con un día más
 
-1. Medir FPS y memoria reales en computador y iPad físico; implementar submuestreo (`setDrawRange`) durante el gesto de órbita, ajustar `pixelRatio`/antialias en táctil y LOD por octree si hace falta.
-2. Parsear la nube por trozos en el worker en vez de unir todo el archivo en RAM.
+1. Medir FPS y memoria reales en un iPad físico con escaneos de 2 M y 300 MB.
+2. Añadir LOD espacial por octree con *frustum culling* si escaneos aún mayores lo requieren.
 3. Añadir pruebas de componentes UI con Testing Library además de las pruebas unitarias actuales de Vitest (`pts1Parser` y `api/client`).
 
 ## Estructura
