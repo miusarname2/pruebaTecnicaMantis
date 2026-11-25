@@ -1,6 +1,6 @@
-// Web Worker for downloading, parsing, and level-partitioning PTS1 binary point cloud files
+// Web Worker for streaming, parsing, shuffling, and level-partitioning PTS1 binary point clouds
 // Runs on a background thread so the 3D scene and UI remain completely fluid
-import { parsePts1Buffer, type SpaceBoxInput } from './pts1Parser';
+import { Pts1StreamParser, type SpaceBoxInput } from './pts1Parser';
 
 self.onmessage = async (e: MessageEvent<{ url: string; token: string; spaces?: SpaceBoxInput[] }>) => {
   const { url, token, spaces = [] } = e.data;
@@ -46,8 +46,7 @@ self.onmessage = async (e: MessageEvent<{ url: string; token: string; spaces?: S
     const totalBytes = contentLength ? parseInt(contentLength, 10) : 0;
 
     const reader = response.body.getReader();
-    let preallocatedBuffer: Uint8Array | null = totalBytes > 0 ? new Uint8Array(totalBytes) : null;
-    const chunks: Uint8Array[] = [];
+    const parser = new Pts1StreamParser(spaces);
     let loadedBytes = 0;
     let lastProgressTime = 0;
 
@@ -56,17 +55,17 @@ self.onmessage = async (e: MessageEvent<{ url: string; token: string; spaces?: S
       if (done) break;
 
       if (value) {
-        if (preallocatedBuffer && loadedBytes + value.byteLength <= preallocatedBuffer.byteLength) {
-          preallocatedBuffer.set(value, loadedBytes);
-        } else {
-          if (preallocatedBuffer) {
-            if (loadedBytes > 0) {
-              chunks.push(preallocatedBuffer.slice(0, loadedBytes));
-            }
-            preallocatedBuffer = null;
-          }
-          chunks.push(value);
+        const chunkErr = parser.push(value);
+        if (chunkErr) {
+          await reader.cancel().catch(() => { /* ignore cancel error */ });
+          self.postMessage({
+            type: 'error',
+            message: chunkErr.message,
+            isTruncated: chunkErr.isTruncated,
+          });
+          return;
         }
+
         loadedBytes += value.byteLength;
 
         const now = performance.now();
@@ -83,22 +82,7 @@ self.onmessage = async (e: MessageEvent<{ url: string; token: string; spaces?: S
       }
     }
 
-    let fullBuffer: Uint8Array;
-    if (preallocatedBuffer) {
-      fullBuffer = loadedBytes === preallocatedBuffer.byteLength
-        ? preallocatedBuffer
-        : preallocatedBuffer.subarray(0, loadedBytes);
-    } else {
-      fullBuffer = new Uint8Array(loadedBytes);
-      let offset = 0;
-      for (const chunk of chunks) {
-        fullBuffer.set(chunk, offset);
-        offset += chunk.byteLength;
-      }
-      chunks.length = 0;
-    }
-
-    const result = parsePts1Buffer(fullBuffer, spaces);
+    const result = parser.finish(true);
     if (!result.ok) {
       self.postMessage({
         type: 'error',
