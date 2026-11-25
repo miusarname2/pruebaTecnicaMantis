@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import type { Space } from '../types';
 
 interface IssueModalProps {
@@ -18,32 +18,19 @@ export const IssueModal: React.FC<IssueModalProps> = ({
   onClose,
   onSubmit,
 }) => {
+  const initialLevel = selectedSpace && levels.includes(selectedSpace.level)
+    ? selectedSpace.level
+    : (levels[0] || '');
+  const initialSpaceId = selectedSpace && levels.includes(selectedSpace.level)
+    ? selectedSpace.id
+    : '';
+
   const [title, setTitle] = useState('');
-  const [level, setLevel] = useState(levels[0] || '');
-  const [spaceId, setSpaceId] = useState<string>(selectedSpace?.id || '');
+  const [level, setLevel] = useState(initialLevel);
+  const [spaceId, setSpaceId] = useState<string>(initialSpaceId);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationError, setValidationError] = useState<string | null>(null);
   const [createdIssueId, setCreatedIssueId] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (isOpen) {
-      setValidationError(null);
-      setCreatedIssueId(null);
-      if (selectedSpace && levels.includes(selectedSpace.level)) {
-        setSpaceId(selectedSpace.id);
-        setLevel(selectedSpace.level);
-      } else {
-        setSpaceId('');
-        setLevel(levels[0] || '');
-      }
-    }
-  }, [isOpen, selectedSpace, levels]);
-
-  useEffect(() => {
-    if (levels.length > 0 && !levels.includes(level)) {
-      setLevel(levels[0]);
-    }
-  }, [levels, level]);
 
   if (!isOpen) return null;
 
