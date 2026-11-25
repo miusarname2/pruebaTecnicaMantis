@@ -12,15 +12,33 @@ const notFound = (res, error) => res.status(404).json({ error });
 const rangeNotSatisfiable = (res, fileSize) =>
   res.status(416).set('Content-Range', `bytes */${fileSize}`).end();
 
-// Devuelve { start, end } o null si el header no es válido para este archivo
 const parseRange = (header, fileSize) => {
-  const match = /^bytes=(\d+)-(\d*)$/.exec(header);
-  if (!match) return null;
+  if (fileSize <= 0 || typeof header !== 'string') return null;
 
-  const start = Number(match[1]);
-  const end = match[2] ? Number(match[2]) : fileSize - 1;
+  const trimmed = header.trim();
 
-  if (start > end || end >= fileSize) return null;
+  const suffixMatch = /^bytes=-(\d+)$/.exec(trimmed);
+  if (suffixMatch) {
+    const suffixLength = Number(suffixMatch[1]);
+    if (!Number.isSafeInteger(suffixLength) || suffixLength <= 0) return null;
+    const start = Math.max(0, fileSize - suffixLength);
+    return { start, end: fileSize - 1 };
+  }
+
+  const rangeMatch = /^bytes=(\d+)-(\d*)$/.exec(trimmed);
+  if (!rangeMatch) return null;
+
+  const start = Number(rangeMatch[1]);
+  if (!Number.isSafeInteger(start) || start >= fileSize) return null;
+
+  let end = fileSize - 1;
+  if (rangeMatch[2]) {
+    const parsedEnd = Number(rangeMatch[2]);
+    if (!Number.isSafeInteger(parsedEnd)) return null;
+    end = Math.min(parsedEnd, fileSize - 1);
+  }
+
+  if (start > end) return null;
   return { start, end };
 };
 

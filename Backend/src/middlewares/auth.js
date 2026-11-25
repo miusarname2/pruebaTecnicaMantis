@@ -18,6 +18,9 @@ export default (req, res, next) => {
   }
 
   req.user = user;
-  res.set('Vary', 'Authorization');
+  res.set({
+    Vary: 'Authorization',
+    'Cache-Control': 'private, no-cache',
+  });
   next();
 };

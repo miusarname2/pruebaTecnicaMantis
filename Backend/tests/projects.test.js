@@ -105,10 +105,25 @@ describe('Rule 6: ETag and conditional requests', () => {
     expect(res.headers.etag).toBeDefined();
   });
 
-  test('Cache-Control is private and Vary includes Authorization', async () => {
-    const res = await request(app).get('/api/projects/1201-30001').set('Authorization', STAFF);
-    expect(res.headers['cache-control']).toContain('private');
-    expect(res.headers.vary).toContain('Authorization');
+  test('Cache-Control is private and Vary includes Authorization on detail, list, spaces, and cloud', async () => {
+    const detail = await request(app).get('/api/projects/1201-30001').set('Authorization', STAFF);
+    expect(detail.headers['cache-control']).toContain('private');
+    expect(detail.headers.vary).toContain('Authorization');
+
+    const list = await request(app).get('/api/projects').set('Authorization', STAFF);
+    expect(list.headers['cache-control']).toContain('private');
+    expect(list.headers.vary).toContain('Authorization');
+
+    const spaces = await request(app).get('/api/projects/1201-30001/spaces').set('Authorization', STAFF);
+    expect(spaces.headers['cache-control']).toContain('private');
+    expect(spaces.headers.vary).toContain('Authorization');
+
+    const cloud = await request(app)
+      .get('/api/projects/1201-30001/cloud')
+      .set('Authorization', STAFF)
+      .set('Range', 'bytes=0-15');
+    expect(cloud.headers['cache-control']).toContain('private');
+    expect(cloud.headers.vary).toContain('Authorization');
   });
 
   test('If-None-Match with matching ETag → 304', async () => {
@@ -161,6 +176,57 @@ describe('Rule 7: Range / cloud', () => {
     expect(res.status).toBe(206);
     expect(res.headers['content-range']).toMatch(/^bytes 0-15\//);
     expect(parseInt(res.headers['content-length'], 10)).toBe(16);
+  });
+
+  test('Range: bytes=0-999999999 → 206 clamped to end of file', async () => {
+    const res = await request(app)
+      .get('/api/projects/1201-30001/cloud')
+      .set('Authorization', STAFF)
+      .set('Range', 'bytes=0-999999999');
+    expect(res.status).toBe(206);
+    const match = /^bytes 0-(\d+)\/(\d+)$/.exec(res.headers['content-range']);
+    expect(match).not.toBeNull();
+    const end = Number(match[1]);
+    const total = Number(match[2]);
+    expect(end).toBe(total - 1);
+    expect(parseInt(res.headers['content-length'], 10)).toBe(total);
+  });
+
+  test('Range: bytes=-16 → 206 with last 16 bytes', async () => {
+    const res = await request(app)
+      .get('/api/projects/1201-30001/cloud')
+      .set('Authorization', STAFF)
+      .set('Range', 'bytes=-16');
+    expect(res.status).toBe(206);
+    const match = /^bytes (\d+)-(\d+)\/(\d+)$/.exec(res.headers['content-range']);
+    expect(match).not.toBeNull();
+    const start = Number(match[1]);
+    const end = Number(match[2]);
+    const total = Number(match[3]);
+    expect(start).toBe(total - 16);
+    expect(end).toBe(total - 1);
+    expect(parseInt(res.headers['content-length'], 10)).toBe(16);
+  });
+
+  test('Range: unsatisfiable ranges → 416 with Content-Range', async () => {
+    const pastEnd = await request(app)
+      .get('/api/projects/1201-30001/cloud')
+      .set('Authorization', STAFF)
+      .set('Range', 'bytes=999999999-');
+    expect(pastEnd.status).toBe(416);
+    expect(pastEnd.headers['content-range']).toMatch(/^bytes \*\/\d+$/);
+
+    const zeroSuffix = await request(app)
+      .get('/api/projects/1201-30001/cloud')
+      .set('Authorization', STAFF)
+      .set('Range', 'bytes=-0');
+    expect(zeroSuffix.status).toBe(416);
+
+    const inverted = await request(app)
+      .get('/api/projects/1201-30001/cloud')
+      .set('Authorization', STAFF)
+      .set('Range', 'bytes=20-10');
+    expect(inverted.status).toBe(416);
   });
 });
 
