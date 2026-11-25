@@ -42,6 +42,17 @@ export class ViewerScene {
   // Point cloud management: partitioned per level for instant 60 FPS filtering
   private cloudGroup: THREE.Group = new THREE.Group();
   private levelCloudMeshes: Map<string, THREE.Points> = new Map();
+  private levelPointCounts: Map<string, number> = new Map();
+
+  // LOD & FPS performance monitoring
+  private isInteracting: boolean = false;
+  private adaptiveLodRatio: number = 1.0;
+  private currentLodRatio: number = 1.0;
+  private lodSettleTimer: number | null = null;
+  private fpsFrameCount: number = 0;
+  private fpsLastSampleTime: number = performance.now();
+  private lastReportedFps: number = 60;
+  private onPerfUpdate?: (stats: { fps: number; renderedPoints: number; totalPoints: number; lodRatio: number }) => void;
 
   // Interaction
   private raycaster: THREE.Raycaster = new THREE.Raycaster();
@@ -49,9 +60,14 @@ export class ViewerScene {
   private pointerDownPos: { x: number; y: number } = { x: 0, y: 0 };
   private onSpaceSelected?: (space: Space | null) => void;
 
-  constructor(container: HTMLElement, onSpaceSelected?: (space: Space | null) => void) {
+  constructor(
+    container: HTMLElement,
+    onSpaceSelected?: (space: Space | null) => void,
+    onPerfUpdate?: (stats: { fps: number; renderedPoints: number; totalPoints: number; lodRatio: number }) => void
+  ) {
     this.container = container;
     this.onSpaceSelected = onSpaceSelected;
+    this.onPerfUpdate = onPerfUpdate;
 
     this.isDarkMode = document.documentElement.classList.contains('dark');
 
@@ -113,6 +129,8 @@ export class ViewerScene {
     // ── Event Listeners ──────────────────────────────────────────────
     this.renderer.domElement.addEventListener('pointerdown', this.onPointerDown);
     this.renderer.domElement.addEventListener('pointerup', this.onPointerUp);
+    this.controls.addEventListener('start', this.onControlsStart);
+    this.controls.addEventListener('end', this.onControlsEnd);
 
     this.animate();
   }
@@ -155,10 +173,111 @@ export class ViewerScene {
     });
   }
 
+  private onControlsStart = () => {
+    this.isInteracting = true;
+    if (this.lodSettleTimer !== null) {
+      window.clearTimeout(this.lodSettleTimer);
+      this.lodSettleTimer = null;
+    }
+    this.updateCloudLod();
+  };
+
+  private onControlsEnd = () => {
+    this.isInteracting = false;
+    if (this.lodSettleTimer !== null) {
+      window.clearTimeout(this.lodSettleTimer);
+    }
+    this.lodSettleTimer = window.setTimeout(() => {
+      this.lodSettleTimer = null;
+      this.updateCloudLod();
+    }, 180);
+  };
+
+  private getVisiblePointStats(): { totalPoints: number; renderedPoints: number } {
+    let totalPoints = 0;
+    let renderedPoints = 0;
+    this.levelCloudMeshes.forEach((mesh, lvl) => {
+      if (!mesh.visible) return;
+      const total = this.levelPointCounts.get(lvl) ?? 0;
+      totalPoints += total;
+      const rangeCount = mesh.geometry.drawRange.count;
+      renderedPoints += rangeCount === Infinity ? total : Math.min(total, rangeCount);
+    });
+    return { totalPoints, renderedPoints };
+  }
+
+  private updateCloudLod() {
+    let totalVisible = 0;
+    this.levelCloudMeshes.forEach((mesh, lvl) => {
+      if (mesh.visible) {
+        totalVisible += this.levelPointCounts.get(lvl) ?? 0;
+      }
+    });
+
+    let targetRatio = 1.0;
+    if (totalVisible > 350_000) {
+      targetRatio = this.isInteracting
+        ? Math.min(0.25, this.adaptiveLodRatio)
+        : this.adaptiveLodRatio;
+    }
+
+    this.currentLodRatio = targetRatio;
+    const pointSize = targetRatio < 1.0 ? 2.2 : 1.5;
+
+    this.levelCloudMeshes.forEach((mesh, lvl) => {
+      const total = this.levelPointCounts.get(lvl) ?? 0;
+      const drawCount = targetRatio >= 1.0 ? total : Math.max(1, Math.floor(total * targetRatio));
+      mesh.geometry.setDrawRange(0, drawCount);
+      if (mesh.material instanceof THREE.PointsMaterial && mesh.material.size !== pointSize) {
+        mesh.material.size = pointSize;
+        mesh.material.needsUpdate = true;
+      }
+    });
+
+    const stats = this.getVisiblePointStats();
+    this.onPerfUpdate?.({
+      fps: this.lastReportedFps,
+      renderedPoints: stats.renderedPoints,
+      totalPoints: stats.totalPoints,
+      lodRatio: this.currentLodRatio,
+    });
+  }
+
   private animate = () => {
     this.animationFrameId = requestAnimationFrame(this.animate);
     this.controls.update();
     this.renderer.render(this.scene, this.camera);
+
+    this.fpsFrameCount++;
+    const now = performance.now();
+    const elapsed = now - this.fpsLastSampleTime;
+    if (elapsed >= 500) {
+      const fps = Math.round((this.fpsFrameCount * 1000) / elapsed);
+      this.fpsFrameCount = 0;
+      this.fpsLastSampleTime = now;
+      this.lastReportedFps = fps;
+
+      const { totalPoints, renderedPoints } = this.getVisiblePointStats();
+      if (totalPoints > 350_000) {
+        if (fps < 24 && this.adaptiveLodRatio > 0.25) {
+          this.adaptiveLodRatio = Math.max(0.25, this.adaptiveLodRatio * 0.5);
+          this.updateCloudLod();
+          return;
+        }
+        if (!this.isInteracting && fps >= 50 && this.adaptiveLodRatio < 1.0) {
+          this.adaptiveLodRatio = Math.min(1.0, this.adaptiveLodRatio * 2);
+          this.updateCloudLod();
+          return;
+        }
+      }
+
+      this.onPerfUpdate?.({
+        fps,
+        renderedPoints,
+        totalPoints,
+        lodRatio: this.currentLodRatio,
+      });
+    }
   };
 
   private onPointerDown = (event: PointerEvent) => {
@@ -303,6 +422,7 @@ export class ViewerScene {
     this.levelCloudMeshes.forEach((cloudMesh, lvl) => {
       cloudMesh.visible = (level === 'ALL' || lvl === level);
     });
+    this.updateCloudLod();
   }
 
   public clearSpaces() {
@@ -330,6 +450,7 @@ export class ViewerScene {
   // ── Point Cloud Rendering per Level (partitioned in Web Worker) ─────
   public setPointCloud(buckets: CloudLevelBucket[]) {
     this.clearPointCloud();
+    this.adaptiveLodRatio = 1.0;
 
     buckets.forEach(({ level, positions, colors }) => {
       if (positions.length === 0) return;
@@ -350,7 +471,10 @@ export class ViewerScene {
 
       this.cloudGroup.add(mesh);
       this.levelCloudMeshes.set(level, mesh);
+      this.levelPointCounts.set(level, positions.length / 3);
     });
+
+    this.updateCloudLod();
   }
 
   public clearPointCloud() {
@@ -364,6 +488,10 @@ export class ViewerScene {
       }
     });
     this.levelCloudMeshes.clear();
+    this.levelPointCounts.clear();
+    this.currentLodRatio = 1.0;
+    this.adaptiveLodRatio = 1.0;
+    this.onPerfUpdate?.({ fps: this.lastReportedFps, renderedPoints: 0, totalPoints: 0, lodRatio: 1.0 });
   }
 
   public fitCameraToBounds(box: THREE.Box3) {
@@ -397,8 +525,13 @@ export class ViewerScene {
     if (this.animationFrameId !== null) {
       cancelAnimationFrame(this.animationFrameId);
     }
+    if (this.lodSettleTimer !== null) {
+      window.clearTimeout(this.lodSettleTimer);
+    }
     this.renderer.domElement.removeEventListener('pointerdown', this.onPointerDown);
     this.renderer.domElement.removeEventListener('pointerup', this.onPointerUp);
+    this.controls.removeEventListener('start', this.onControlsStart);
+    this.controls.removeEventListener('end', this.onControlsEnd);
 
     this.clearSpaces();
     this.clearPointCloud();
