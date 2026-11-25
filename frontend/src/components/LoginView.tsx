@@ -164,8 +164,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
         {/* Footer */}
         <footer className="flex items-center justify-between gap-gutter-md pt-gutter-lg border-t border-light-outline-variant dark:border-dark-outline-variant">
-          <span className="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant">SITE VIEWER v2.4</span>
-          <span className="font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant">PTS1 · IFC4 · E57 Compatible</span>
+          <span className="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant">SITE VIEWER</span>
+          <span className="font-body text-body-sm text-light-on-surface-variant dark:text-dark-on-surface-variant">PTS1 Binary Format</span>
         </footer>
       </div>
 
@@ -215,12 +215,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
         </div>
 
         {/* Bottom Technical Readout */}
-        <div className="flex items-center justify-between gap-gutter-md">
-          <div className="inline-flex items-center gap-gutter-sm px-gutter-md py-gutter-xs rounded bg-light-surface-container-lowest dark:bg-dark-surface-container border border-light-outline-variant dark:border-dark-outline-variant">
-            <span className="font-mono text-mono-sm text-light-on-surface-variant dark:text-dark-on-surface-variant">PTS1 DENSITY</span>
-            <span className="font-mono text-mono-sm text-light-on-surface dark:text-dark-on-surface font-semibold tabular-nums">0.02m · 2.0M PTS</span>
-          </div>
-
+        <div className="flex items-center justify-end gap-gutter-md">
           <div className="inline-flex items-center gap-gutter-xs px-gutter-md py-gutter-xs rounded bg-light-surface-container-lowest dark:bg-dark-surface-container border border-light-outline-variant dark:border-dark-outline-variant">
             <span className="font-mono text-mono-sm text-light-on-surface dark:text-dark-on-surface tabular-nums">N 0°</span>
             <span className="text-light-outline-variant dark:text-dark-outline-variant">|</span>

@@ -74,7 +74,6 @@ El `postMessage` final transfiere los buffers de cada nivel sin copiarlos. Al ba
 Ordenadas por importancia.
 
 1. **Sin prueba en iPad físico.** Todos los controles cumplen `>= 44 px` e inputs `16 px` en CSS/DOM, y se implementó LOD adaptativo + parseo en streaming + barajado uniforme, pero falta validación manual en un iPad real con Safari.
-2. **Textos decorativos de la pantalla de entrada** ("IFC4 · E57 Compatible", "0.02m · 2.0M PTS") son estáticos: el visor solo lee PTS1 y no importa IFC ni E57.
 
 ## Con un día más
 
